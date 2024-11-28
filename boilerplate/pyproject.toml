@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "Future - Boilerplate"
+version = "0.0.1"
+description = "This is a boilerplate example for Future."
+authors = ["nicolaipre"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+python-dotenv = "^1.0.1"
+future = {git = "ssh://git@github.com/Defendinary/future.git"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

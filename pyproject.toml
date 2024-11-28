@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "future"
+version = "0.1.0"
+description = "Next Gen. ASGI Framework for minimal Web APIs"
+authors = ["Your Name <you@example.com>"]
+license = "LICENSE"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+uvicorn = "^0.32.1"
+httpx = "^0.28.0"
+uvloop = {version = "^0.21.0", markers = "sys_platform == 'linux' or sys_platform == 'darwin'"}
+rich = "^13.7.1"
+httpie = "^3.2.2"
+elasticsearch = "^8.15.1"
+dnspython = "^2.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+ruff = "^0.8.0"
+mypy = "^1.9.0"
+
+[tool.ruff]
+
+[tool.ruff.lint]
+extend-select = ["UP"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
