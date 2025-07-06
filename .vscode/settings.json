@@ -1,0 +1,35 @@
+{
+    "python.defaultInterpreterPath": "./.venv",
+    "python.languageServer": "None",
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.completeFunctionParens": true,
+    "cursorpyright.analysis.typeCheckingMode": "strict",
+    
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        
+        ".venv": true,
+        ".vscode": false,
+        ".gitignore": true,
+        ".flake8": true,
+        ".coverage": true,
+        ".pytest_cache": true,
+        ".mypy_cache": true,
+        ".ruff_cache": true,
+
+        "poetry.lock": true,
+        "poetry.toml": true,
+        "LICENSE": true,
+        "mkdocs.yml": true
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ]
+}

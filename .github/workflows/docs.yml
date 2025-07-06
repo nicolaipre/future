@@ -1,0 +1,51 @@
+name: Docs
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build docs
+        run: poetry run mkdocs build
+
+  # Uncomment to enable deploy on push to main/master
+  # deploy-docs:
+  #   if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+  #   needs: build-docs
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - name: Install Poetry
+  #       run: |
+  #         python3 -m pip install --upgrade pip
+  #         python3 -m pip install poetry
+  #     - name: Install dependencies
+  #       run: poetry install
+  #     - name: Deploy docs
+  #       run: poetry run mkdocs gh-deploy --force 

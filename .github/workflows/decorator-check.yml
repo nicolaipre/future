@@ -1,0 +1,83 @@
+name: Decorator Check
+
+on:
+  pull_request:
+    branches: ["master", "main"]
+
+jobs:
+  check-decorators:
+    name: "Check for prohibited decorators"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "3.12"
+
+      - name: Scan for decorators
+        run: |
+          echo "🔍 Scanning for decorators..."
+          
+          # Find all Python files
+          python_files=$(find . -name "*.py" -not -path "./.venv/*" -not -path "./venv/*" -not -path "./__pycache__/*" -not -path "./.git/*")
+          
+          # Check for decorators (lines starting with @)
+          decorator_lines=$(grep -n "^[[:space:]]*@" $python_files 2>/dev/null || true)
+          
+          if [ -n "$decorator_lines" ]; then
+            echo "❌ DECORATORS FOUND! This project prohibits the use of decorators."
+            echo ""
+            echo "The following lines contain decorators:"
+            echo "$decorator_lines"
+            echo ""
+            echo "Please remove all decorators from your code. This project follows a minimalist approach"
+            echo "that emphasizes clarity and explicit code over decorator-based abstractions."
+            echo ""
+            echo "Common decorators to avoid:"
+            echo "- @dataclass"
+            echo "- @property"
+            echo "- @staticmethod"
+            echo "- @classmethod"
+            echo "- @functools.wraps"
+            echo "- Custom decorators"
+            echo ""
+            echo "Instead, use plain classes and explicit function calls."
+            exit 1
+          else
+            echo "✅ No decorators found. Code follows project guidelines."
+          fi
+
+      - name: Comment on PR
+        if: failure()
+        run: |
+          cat << 'EOF'
+          ## ❌ Decorators Prohibited
+
+          This project follows a minimalist approach that prohibits the use of decorators.
+
+          **Found decorators in your code that must be removed:**
+
+              Decorators found in Python files
+
+          **Why no decorators?**
+          - This project emphasizes clarity and explicit code
+          - Decorators can hide complexity and make code harder to understand
+          - We prefer plain classes and explicit function calls
+          - Decorators are ugly as fuck and makes me want to poke my eyes out with scissors
+
+          **Common decorators to avoid:**
+          - @dataclass → Use plain classes with explicit __init__
+          - @property → Use explicit getter/setter methods
+          - @staticmethod → Use module-level functions
+          - @classmethod → Use explicit class methods
+          - @functools.wraps → Use explicit function wrapping
+          - Custom decorators → Use explicit function calls
+
+          Please remove all decorators and resubmit your PR.
+          EOF 

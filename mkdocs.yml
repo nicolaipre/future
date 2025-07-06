@@ -1,0 +1,38 @@
+site_name: Future Framework
+site_description: A minimalist, decorator-free ASGI web framework for Python
+site_author: Future Framework Team
+
+repo_name: future
+repo_url: https://github.com/Defendinary/future
+edit_uri: edit/main/docs/
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage Guide: usage.md
+  - Quick Reference: quick-reference.md
+  - Examples: examples.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Defendinary/future
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/future-api/
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js 

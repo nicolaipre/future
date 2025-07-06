@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "future"
-version = "0.1.0"
+version = "0.3.1"
 description = "Next Gen. ASGI Framework for minimal Web APIs"
-authors = ["Your Name <you@example.com>"]
+authors = ["nicolaipre"]
 license = "LICENSE"
 readme = "README.md"
 
@@ -15,17 +15,93 @@ rich = "^13.7.1"
 httpie = "^3.2.2"
 elasticsearch = "^8.15.1"
 dnspython = "^2.7.0"
+ariadne = "^0.23.0"
+pwntools = "^4.14.0"
+msgspec = "^0.19.0"
+pytest-asyncio = "^0.25.3"
+coverage = "^7.6.10"
+faker = "^35.0.0"
+python-magic = "^0.4.27"
+strawberry-graphql = "^0.262.5"
+plotly = "^6.0.1"
+networkx = "^3.4.2"
+flask = "^3.1.0"
+numpy = "^2.2.4"
+python-dotenv = "^1.1.1"
+sqlalchemy = "^2.0.41"
+pydantic = "^2.0.0"
+mkdocs = "^1.6.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
 ruff = "^0.8.0"
 mypy = "^1.9.0"
+types-psutil = "^7.0.0.20250601"
+build = "^1.2.2.post1"
+twine = "^6.1.0"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "semver"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
+# Your code shows consistent use of 120+ character lines
+line-length = 160
 
 [tool.ruff.lint]
-extend-select = ["UP"]
+# Select specific rules based on your codebase
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # warnings
+    "B",   # bugbear
+    "UP",  # pyupgrade
+]
+
+# Ignore rules that conflict with your style
+ignore = [
+    "E261",  # Don't require whitespace after inline comments
+    "E266",  # Allow multiple ## for comments
+    "E302",  # Allow multiple blank lines between functions
+    "E303",  # Allow multiple blank lines inside functions
+    "E402",  # Allow imports not at top
+    "E731",  # Allow lambda expressions
+    "B008",  # Allow function calls in defaults
+    "N805",  # Allow first argument of method to not be self
+    "F403",  # Allow star imports
+    "F405",  # Allow undefined from star imports
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+lines-between-types = 1
+force-single-line = false
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.per-file-ignores]
+"*.py" = ["TCH"]  # Ignore type checking hints issues
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disable_error_code = ["misc"]
+
+[tool.poetry.scripts]
+future = "future.cli:main"

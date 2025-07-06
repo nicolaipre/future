@@ -1,0 +1,45 @@
+{
+    /*
+     * This is the devcontainer.json file for the Future project.
+     * Docs:
+     * - https://aka.ms/devcontainer.json
+     * - https://containers.dev/reference/devcontainerjson/
+     * - https://github.com/devcontainers/templates/tree/main/src/python
+     */
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                //"ms-python.vscode-pylance",
+                "anysphere.pyright",
+                "anysphere.remote-containers",
+                "github.vscode-github-actions",
+                "ms-vscode.makefile-tools"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "./.venv",
+                "python.languageServer": "Pylance",
+                "python.analysis.languageServerMode": "full",
+                "python.analysis.typeCheckingMode": "strict"
+            }
+        }
+    },
+    "features": {
+        "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+        "ghcr.io/devcontainers-extra/features/poetry:2": {}
+    },
+    "forwardPorts": [
+        5000
+    ],
+    "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
+    "name": "Future",
+    "postCreateCommand": "echo 'Container created successfully'",
+    "postStartCommand": "poetry install",
+    "remoteUser": "vscode",
+    "runArgs": [
+        "--hostname", "example.com"
+        //"--env-file", ".devcontainer/devcontainer.env"
+    ],
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}

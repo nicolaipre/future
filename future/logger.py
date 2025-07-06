@@ -1,71 +1,53 @@
+import atexit
 import logging
 import logging.config
 import logging.handlers
-import atexit
 
-_valid_log_levels = logging.getLevelNamesMapping()
-
-_LOGGER_DICT_CONF = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "kv_log": {
-            "format": "%(asctime)s log_level=%(levelname)s filename=%(filename)s name=%(name)s msg=%(message)s",
-            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
-        }
-    },
-    "handlers": {
-        "stdout": {
-            "class": "logging.StreamHandler",
-            "level": "INFO",
-            "formatter": "kv_log",
-            "stream": "ext://sys.stdout",
-        },
-        # "file_kv": {
-        #     "class": "logging.handlers.RotatingFileHandler",
-        #     "level": "INFO",
-        #     "formatter": "kv_log",
-        #     "filename": f"logs/web-api.log",
-        #     "maxBytes": 10000000,
-        #     "backupCount": 3
-        # },
-        "queue_handler": {
-            "class": "logging.handlers.QueueHandler",
-            "handlers": [
-                "stdout",
-                # "file_kv"
-            ],
-            "respect_handler_level": True,
-        },
-    },
-    "loggers": {
-        "future": {
-            "level": "INFO",
-            "handlers": [
-                "queue_handler",
-            ],
-        }
-    },
-}
+from future.settings import LOGGING_CONFIG
 
 
-def setup_logging():
-    logging.config.dictConfig(_LOGGER_DICT_CONF)
-    queue_handler = logging.getHandlerByName("queue_handler")
+# ANSI color codes
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter with colors like uvicorn"""
 
-    if queue_handler is not None:
-        # queue_handler.listener: logging.handlers.QueueListener
-        queue_handler.listener.start()
-        atexit.register(queue_handler.listener.stop)
+    COLORS = {
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
+    }
+    RESET = "\033[0m"
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Add color to levelname
+        levelname = record.levelname
+        if levelname in self.COLORS:
+            # Calculate padding based on original levelname length BEFORE adding colors
+            padding = " " * (9 - len(levelname))  # 9 is max level length (CRITICAL) + 1
+            colored_levelname = f"{self.COLORS[levelname]}{levelname}{self.RESET}"
+            return f"{colored_levelname}:{padding}{record.getMessage()}"
+        return super().format(record)
 
 
-# def change_handlers_log_level(log_level: str):
-#
-#     # TODO: make dynamic?
-#     if log_level not in _valid_log_levels:
-#         raise Exception(f"Invalid log level {log_level=}")
-#
-#     file_kv_handler = logging.getHandlerByName("file_kv")
-#     stdout_handler = logging.getHandlerByName("stdout")
-#     stdout_handler.setLevel(log_level)
-#     file_kv_handler.setLevel(log_level)
+# Configure logging using settings
+logging.config.dictConfig(LOGGING_CONFIG)
+
+# Get the logger and apply colored formatter
+logger = logging.getLogger("future")
+if hasattr(logger, "handlers") and logger.handlers:
+    for handler in logger.handlers:
+        handler.setFormatter(ColoredFormatter("%(message)s"))
+
+# Start queue handler if it exists
+queue_handler = logging.getHandlerByName("queue_handler")
+if queue_handler is not None:
+    # Type check for QueueHandler which has listener attribute
+    if isinstance(queue_handler, logging.handlers.QueueHandler):
+        listener = getattr(queue_handler, "listener", None)
+        if listener is not None:
+            listener.start()
+            atexit.register(listener.stop)
+
+# Create logger instance
+log = logging.getLogger("future")

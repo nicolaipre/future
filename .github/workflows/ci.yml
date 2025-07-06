@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: ["master", "main"]
+  pull_request:
+    branches: ["master", "main"]
+
+jobs:
+  test:
+    name: "Python ${{ matrix.python-version }}"
+    runs-on: "ubuntu-latest"
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ matrix.python-version }}"
+          allow-prereleases: true
+
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run linting & type checking
+        run: |
+          poetry run ruff format --check --diff future
+          poetry run ruff check future
+          poetry run mypy future
+          poetry run mypy tests
+
+      - name: Build package
+        run: |
+          poetry run python -m build
+          poetry run twine check dist/*
+
+      - name: Run tests
+        run: |
+          poetry run coverage run -m pytest tests
+
+      - name: Enforce coverage
+        run: |
+          poetry run coverage report --show-missing --skip-covered --fail-under=20
+
+  build:
+    name: "Build package"
+    runs-on: "ubuntu-latest"
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+
+      - name: Set up Python 3.12
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build package
+        run: |
+          poetry run python -m build
+          poetry run twine check dist/*
+
+      - name: Upload build artifacts
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: dist
+          path: dist/ 

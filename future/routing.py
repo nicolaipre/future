@@ -1,24 +1,30 @@
-from typing import Any, Callable, Optional, TypedDict
-from future.middleware import Middleware
 import re
+
+from typing import Any, Callable, Optional, TypedDict
+
+from future.middleware import Middleware
 
 
 class RegexConfig(TypedDict):
-    paths: list[re.Pattern]
+    paths: list[re.Pattern[str]]
+
 
 class RouteException(Exception):
     pass
 
+
 class InvalidValuePatternName(RouteException):
-    def __init__(self, pattern_name: str, matched_parameter: str):
+    def __init__(self, pattern_name: str, matched_parameter: str) -> None:
         self.pattern_name = pattern_name
         self.matched_parameter = matched_parameter
         super().__init__(f"Invalid value pattern name: {pattern_name} in {matched_parameter}")
 
+
 class RouteMatch:
-    def __init__(self, route: 'Route', params: Optional[dict[str, str]]):
+    def __init__(self, route: "Route", params: Optional[dict[str, str]]) -> None:
         self.route = route
         self.params = params
+
 
 class Route:
     value_patterns = {
@@ -38,6 +44,7 @@ class Route:
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         self.methods = methods
         self.path = path
@@ -45,12 +52,13 @@ class Route:
         self.name = name
         self.strict_slashes = strict_slashes
         self.middlewares = middlewares or []
-        self._compile_pattern()
+        self.scopes = scopes or []
 
-    def _compile_pattern(self) -> None:        
+    # Huge credits to BlackSheep for the code below.
+    def compile_pattern(self) -> None:
         _route_all_rx = re.compile(b"\\*")
         _route_param_rx = re.compile(b"/:([^/]+)")
-        
+
         _mustache_route_param_rx = re.compile(b"/{([^}]+)}")
         _angle_bracket_route_param_rx = re.compile(b"/<([^>]+)>")
 
@@ -68,7 +76,7 @@ class Route:
                 pattern = Route.value_patterns["string"]
             return rb"/(?P<" + name.encode() + rb">" + pattern.encode() + rb")"
 
-        def _handle_rich_parameter(match: re.Match) -> bytes:
+        def _handle_rich_parameter(match: re.Match[bytes]) -> bytes:
             matched_parameter = next(iter(match.groups()))
             assert isinstance(matched_parameter, bytes)
 
@@ -76,20 +84,18 @@ class Route:
                 raw_pattern_name, parameter_name = matched_parameter.split(b":")
                 parameter_pattern_name = raw_pattern_name.decode()
                 parameter_pattern = Route.value_patterns.get(parameter_pattern_name)
-                
+
                 if not parameter_pattern:
                     raise InvalidValuePatternName(parameter_pattern_name, matched_parameter.decode("utf8"))
 
                 return _get_parameter_pattern_fragment(parameter_name.decode(), parameter_pattern)
-            
-            return _get_parameter_pattern_fragment(matched_parameter.decode())
 
+            return _get_parameter_pattern_fragment(matched_parameter.decode())
 
         pattern = self.path.encode()
         for c in _escaped_chars:
             if c in pattern:
                 pattern = pattern.replace(c, b"\\" + c)
-
 
         if b"*" in pattern:
             if pattern.count(b"*") > 1:
@@ -98,7 +104,6 @@ class Route:
                 pattern = _route_all_rx.sub(rb"?(?P<tail>.*)", pattern)
             else:
                 pattern = _route_all_rx.sub(rb"(?P<tail>.*)", pattern)
-
 
         if b"<" in pattern:
             pattern = _angle_bracket_route_param_rx.sub(_handle_rich_parameter, pattern)
@@ -109,32 +114,37 @@ class Route:
         if b"/:" in pattern:
             pattern = _route_param_rx.sub(rb"/(?P<\1>[^\/]+)", pattern)
 
-
         param_names = []
         for p in _named_group_rx.finditer(pattern):
             param_name = p.group(1).decode()
-            
+
             if param_name in param_names:
                 raise ValueError(f"cannot have multiple parameters with name: {param_name}")
-            
-            param_names.append(param_name)
 
+            param_names.append(param_name)
 
         if len(pattern) > 1 and not pattern.endswith(b"*"):
             pattern = pattern + b"/?"
 
-
         self._rx = re.compile(b"^" + pattern + b"$", re.IGNORECASE)
         self.param_names = param_names
 
-
-    def match(self, request_path: bytes) -> Optional[RouteMatch]:        
+    def match(self, request_path: bytes) -> Optional[RouteMatch]:
+        # print("Matching on reqpath:", request_path, "using regex:", self._rx)
         match = self._rx.match(request_path)
         if not match:
             return None
-        
-        lol = RouteMatch(self, match.groupdict() if self.param_names else None)
-        return lol
+
+        # route_match = RouteMatch(self, match.groupdict() if self.param_names else None)
+
+        # Convert bytes values to strings in groupdict
+        params = None
+        if self.param_names:
+            groupdict = match.groupdict()
+            params = {key: value.decode("utf-8") if isinstance(value, bytes) else str(value) for key, value in groupdict.items()}
+
+        route_match = RouteMatch(self, params)
+        return route_match
 
 
 class Get(Route):
@@ -145,6 +155,7 @@ class Get(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["GET"],
@@ -153,6 +164,7 @@ class Get(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -164,6 +176,7 @@ class Post(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["POST"],
@@ -172,6 +185,7 @@ class Post(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -183,6 +197,7 @@ class Put(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["PUT"],
@@ -191,6 +206,7 @@ class Put(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -202,6 +218,7 @@ class Head(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["HEAD"],
@@ -210,6 +227,7 @@ class Head(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -221,6 +239,7 @@ class Options(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["OPTIONS"],
@@ -229,6 +248,7 @@ class Options(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -240,6 +260,7 @@ class Patch(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["PATCH"],
@@ -248,6 +269,7 @@ class Patch(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -259,6 +281,7 @@ class Delete(Route):
         name: str,
         strict_slashes: bool = False,
         middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
     ) -> None:
         super().__init__(
             methods=["DELETE"],
@@ -267,6 +290,28 @@ class Delete(Route):
             name=name,
             strict_slashes=strict_slashes,
             middlewares=middlewares,
+            scopes=scopes,
+        )
+
+
+class WebSocket(Route):
+    def __init__(
+        self,
+        path: str,
+        endpoint: Callable[..., Any],
+        name: str,
+        strict_slashes: bool = False,
+        middlewares: Optional[list[Middleware]] = None,
+        scopes: Optional[list[str]] = None,
+    ) -> None:
+        super().__init__(
+            methods=["WEBSOCKET"],
+            path=path,
+            endpoint=endpoint,
+            name=name,
+            strict_slashes=strict_slashes,
+            middlewares=middlewares,
+            scopes=scopes,
         )
 
 
@@ -284,6 +329,7 @@ class RouteGroup:
         self.routes = routes
         self.subdomain = subdomain
         self.middlewares = middlewares or []
+
 
 class EndpointConfig(TypedDict):
     middleware_before: list[Middleware]
