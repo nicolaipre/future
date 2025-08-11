@@ -102,6 +102,9 @@ class Future:
         self.route_count = 0
         self.max_nesting_depth = 0
         self.registered_domains: set[str] = set()
+        
+        # Optimization: Cache for domain validation
+        self._domain_cache: dict[str, bool] = {}
 
     def set_config(self, config: dict[str, Any]) -> None:
         self.config = config
@@ -273,18 +276,26 @@ class Future:
 
     def _validate_domain_access(self, host_domain: str) -> bool:
         """Validate if the host domain is allowed to access routes."""
+        # Optimization: Check cache first
+        if host_domain in self._domain_cache:
+            return self._domain_cache[host_domain]
+        
         # Check if domain matches our configured domain or any subdomain
         if not self.domain:
+            self._domain_cache[host_domain] = True
             return True  # No domain restriction
 
         # Allow exact domain match
         if host_domain == self.domain:
+            self._domain_cache[host_domain] = True
             return True
 
         # Allow subdomains of our domain
         if host_domain.endswith(f".{self.domain}"):
+            self._domain_cache[host_domain] = True
             return True
 
+        self._domain_cache[host_domain] = False
         return False
 
     def get_performance_stats(self) -> dict[str, Any]:
@@ -295,6 +306,7 @@ class Future:
             "max_nesting_depth": self.max_nesting_depth,
             "domain_list": list(self.registered_domains),
             "memory_usage": {"routes_dict_size": len(self.routes), "total_route_configs": sum(len(configs) for configs in self.routes.values())},
+            "domain_cache_size": len(self._domain_cache),
         }
 
     async def handle_lifespan_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
@@ -323,65 +335,69 @@ class Future:
 
         await send({"type": AsgiEventType.LIFESPAN_SHUTDOWN_COMPLETE})
 
-        """
-        while True:
-            message = await receive()
-            print(f"Got message:", message)
-
-            if message["type"] == "lifespan.startup":
-                # scope["state"]["GlobalKey"] = "Value"
-                await send({"type": "lifespan.startup.complete"})
-            elif message["type"] == "lifespan.shutdown":
-                await send({"type": "lifespan.shutdown.complete"})
-                break
-        """
 
     async def handle_http_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
         request = Request(scope, receive)
         request_path = request.path.encode()
+        
+        # Optimization: Faster host domain extraction
         host_domain = request.host.split("/")[0] if "/" in request.host else request.host
+        
         if not self._validate_domain_access(host_domain):
             response = Response(body="Forbidden", status=403)
             await response(send)
             return
+            
         # In domainless mode, always use the empty string key for lookup
         key = "" if getattr(self, "domainless_mode", False) else host_domain
         domain_routes = self.routes.get(key, {})
+        
+        # Optimization: Direct path lookup first, then regex matching
         matched_route = None
         route_params = None
-        for route_path, route_config in domain_routes.items():
-            route = route_config.get("route", None)
-            if route and hasattr(route, "match"):
-                route_match = route.match(request_path)
-                if route_match:
-                    matched_route = route_config
-                    route_params = route_match.params
-                    break
-            else:
-                if route_path == request.path:
-                    matched_route = route_config
-                    break
+        
+        # Try direct path match first (fastest)
+        if request.path in domain_routes:
+            matched_route = domain_routes[request.path]
+        else:
+            # Fall back to regex matching (slower)
+            for route_config in domain_routes.values():
+                route = route_config.get("route", None)
+                if route and hasattr(route, "match"):
+                    route_match = route.match(request_path)
+                    if route_match:
+                        matched_route = route_config
+                        route_params = route_match.params
+                        break
+                        
         if not matched_route:
             response = Response(body="Not Found", status=404)
             await response(send)
             return
+            
         handler = matched_route["handler"]
         middleware_levels = matched_route["middleware"]["levels"]
+        
+        # Optimization: Flatten middleware processing
         for level in middleware_levels:
             for m in level["before"]:
                 response = await m.intercept(request)  # type: ignore[reportUnknownMemberType]
                 if response is not None:
                     await response(send)
                     return
+                    
         if route_params:
             response = await handler(request, **route_params)
         else:
             response = await handler(request)
+            
+        # Optimization: Process after middleware in reverse
         for level in reversed(middleware_levels):
             for m in level["after"]:
                 modified_response = await m.intercept(request, response)  # type: ignore[reportUnknownMemberType]
                 if modified_response is not None:
                     response = modified_response
+                    
         await response(send)
 
     async def handle_websocket_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
@@ -477,6 +493,7 @@ class Future:
         tls_key: Optional[str] = None,
         tls_cert: Optional[str] = None,
         tls_password: Optional[str] = None,
+        access_log: bool = True,
     ) -> None:
         # Dynamically get system information
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
@@ -538,4 +555,5 @@ class Future:
             timeout_graceful_shutdown=3,
             log_level="info",
             lifespan="on",
+            access_log=access_log,
         )

@@ -1,5 +1,12 @@
+#!/usr/bin/env python3
+"""
+Future Framework Example - No Logging Version
+Test performance without logging overhead.
+"""
+
 from collections.abc import Sequence
 from datetime import datetime, timedelta
+import logging
 
 from future.application import Future
 from future.controllers import DebugController, GraphQLController, OpenAPIController, WebSocketController, WelcomeController
@@ -7,13 +14,19 @@ from future.lifespan import Lifespan
 from future.middleware import TestMiddlewareRequest, TestMiddlewareResponse
 from future.routing import Get, Route, RouteGroup, WebSocket
 from future.scheduler import Task, Unit, check_dns, check_ssh_banner, check_system_uptime, daily_backup
-from future.settings import APP_DEBUG, APP_DOMAIN, APP_LOG_LEVEL, APP_NAME
+from future.settings import APP_DOMAIN
 
+# DISABLE ALL LOGGING FOR PERFORMANCE TESTING
+logging.getLogger().setLevel(logging.CRITICAL)
+logging.getLogger("future").setLevel(logging.CRITICAL)
+logging.getLogger("uvicorn").setLevel(logging.CRITICAL)
+logging.getLogger("uvicorn.access").setLevel(logging.CRITICAL)
+logging.getLogger("uvicorn.error").setLevel(logging.CRITICAL)
 
 routes: Sequence[Route | RouteGroup] = [  # type: ignore
-    Get(path="/", endpoint=WelcomeController.root, name="Welcome"),  # , middlewares=[TestMiddlewareRequest]),  # type: ignore[reportAttributeAccessIssue]
-    Get(path="/test", endpoint=DebugController.test, name="test"),  # , scopes=["debug"]),  # type: ignore[reportAttributeAccessIssue]
-    Get(path="/graphql", endpoint=GraphQLController.query, name="GraphQL"),  # , scopes=["user"]),   # type: ignore[reportAttributeAccessIssue]
+    Get(path="/", endpoint=WelcomeController.root, name="Welcome"),  # type: ignore[reportAttributeAccessIssue]
+    Get(path="/test", endpoint=DebugController.test, name="test"),  # type: ignore[reportAttributeAccessIssue]
+    Get(path="/graphql", endpoint=GraphQLController.query, name="GraphQL"),  # type: ignore[reportAttributeAccessIssue]
     # OpenAPI Documentation Routes
     Get(path="/openapi.json", endpoint=OpenAPIController.openapi, name="OpenAPI Schema"),  # type: ignore[reportAttributeAccessIssue]
     Get(path="/swagger-config", endpoint=OpenAPIController.swagger_config, name="Swagger Config"),  # type: ignore[reportAttributeAccessIssue]
@@ -26,21 +39,18 @@ routes: Sequence[Route | RouteGroup] = [  # type: ignore
         middlewares=[
             TestMiddlewareRequest,  # type: ignore
             TestMiddlewareResponse,  # type: ignore
-            # ResponseCodeConfuser,  # type: ignore
-            # ScopeValidationMiddleware,  # type: ignore
         ],
         routes=[
             Get(path="/", endpoint=WelcomeController.root, name="Welcome"),  # type: ignore[reportAttributeAccessIssue]
             Get(path="/users/<int:user_id>/<str:arg2>", endpoint=DebugController.args, name="getUserInfo"),  # type: ignore[reportAttributeAccessIssue]
             Get(path="/cats/<int:cat_id>", endpoint=DebugController.some_handler, name="get_cat"),  # type: ignore[reportAttributeAccessIssue]
             Get(path="/dogs/<uuid:dog_id>", endpoint=DebugController.some_handler, name="get_dog"),  # type: ignore[reportAttributeAccessIssue]
-            # We can also use nested RouteGroups
             RouteGroup(  # type: ignore
                 name="Nested",
                 subdomain="nested",
                 prefix="/nested",
                 routes=[
-                    Get(path="/ping", endpoint=DebugController.ping, name="Pong")  # , scopes=["read:api"]),  # type: ignore[reportAttributeAccessIssue]
+                    Get(path="/ping", endpoint=DebugController.ping, name="Pong")  # type: ignore[reportAttributeAccessIssue]
                 ],
             ),  # type: ignore
         ],
@@ -83,15 +93,15 @@ cronjobs = [
 
 lifespan = Lifespan(startup_tasks, shutdown_tasks, cronjobs)
 config = {
-    "APP_NAME": APP_NAME,
+    "APP_NAME": "Future No-Logging",
     "APP_DOMAIN": APP_DOMAIN,
-    "APP_DEBUG": APP_DEBUG,
-    "APP_LOG_LEVEL": APP_LOG_LEVEL,
+    "APP_DEBUG": False,  # Disable debug mode
+    "APP_LOG_LEVEL": "CRITICAL",  # Only critical errors
+    "APP_ACCESS_LOG": False,  # Disable access logging
 }
 
 app = Future(lifespan=lifespan, config=config)
 app.add_routes(routes=routes)
-# print(app.routes)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, workers=1, access_log=True)
+    app.run(host="0.0.0.0", port=5000, workers=1, access_log=False) 

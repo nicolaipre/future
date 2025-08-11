@@ -3,7 +3,7 @@ from typing import Any
 
 from future.graphql import queries, schema
 from future.requests import Request
-from future.responses import HTMLResponse, JSONResponse, Response, WebSocketResponse
+from future.responses import HTMLResponse, JSONResponse, Response, WebSocketResponse, PlainTextResponse
 from future.settings import API_SPEC
 
 
@@ -19,6 +19,30 @@ from future.settings import API_SPEC
 - Metaclasses or conventions can be used to treat methods as static implicitly — decorators are not required for static behavior.
 - This pattern is commonly used in frameworks (e.g., FastAPI) where function-style handlers live in classes but are not instance-bound.
 """
+
+
+
+# Hack to avoid ugly decorators such as @staticmethod
+class AutoStaticMeta(type):
+    def __new__(cls, name, bases, dct):
+        # Make all functions static (including async)
+        new_dct = {
+            k: staticmethod(v) if callable(v) and not k.startswith('__') else v
+            for k, v in dct.items()
+        }
+        return super().__new__(cls, name, bases, new_dct)
+
+class BaseController(metaclass=AutoStaticMeta):
+    __slots__ = ()  # No instance attributes allowed
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError(f"{cls.__name__} is a static controller and cannot be instantiated")
+
+class UserController(BaseController):
+    async def get_user(request: Request) -> PlainTextResponse:
+        return PlainTextResponse("alice")
+
+
 
 
 class Controller:
@@ -46,9 +70,8 @@ class GraphQLController(Controller):
             return JSONResponse(data={"errors": [str(error) for error in result.errors]}, status=400)
         return JSONResponse(data=result.data)
 
-
 class DebugController(Controller):
-    async def test(request: Request) -> Response:  # type: ignore[no-self]
+    async def test(request: Request) -> Response:
         return Response(body="lolok")
 
     async def hello(request: Request) -> JSONResponse:  # type: ignore[no-self]
