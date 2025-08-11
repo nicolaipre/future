@@ -5,7 +5,7 @@ Next Gen. [ASGI](https://github.com/django/asgiref) Framework for minimal Web AP
 - [ASGI Fundamentals](https://www.youtube.com/watch?v=ai7y--6ElAE&list=PLJ_usHaf3fgO_PgB1zTSlKVSqDdvh49bi)
 
 ## Build Status
-[![Build Status](https://github.com/Defendinary/future/workflows/Test%20Suite/badge.svg)](https://github.com/Defendinary/future/actions)
+[![Build Status](https://github.com/Defendinary/future/actions/workflows/ci.yml/badge.svg)](https://github.com/Defendinary/future/actions)
 [![Package version](https://badge.fury.io/py/star.svg)](https://pypi.org/project/future-api/)
 
 <!--[![codecov](https://codecov.io/gh/Defendinary/future/branch/master/graph/badge.svg)](https://codecov.io/gh/Defendinary/future)
