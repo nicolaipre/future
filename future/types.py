@@ -40,3 +40,4 @@ class RouteConfig(TypedDict):
     handler: Callable[..., Any]
     middleware: dict[str, list[dict[str, list[Any]]]]  # type: ignore
     regex: dict[str, list[re.Pattern[str] | re.Pattern[bytes]]] | None
+    methods: list[str]

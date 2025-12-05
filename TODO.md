@@ -35,3 +35,12 @@ FIX5: ensure we verify that HTTP Response is a valid HTTP Response type. python 
           ~~~~~~~~^^^^^^
 TypeError: 'dict' object is not callable
 
+
+
+MEGABUG FOUND:
+
+Can POST to GET routes??? What the fuck? Why do we not check that?
+
+Incorrect method for a route should be DROPPED instantly
+
+

@@ -167,6 +167,7 @@ class Future:
             handler=route.endpoint,
             middleware={"levels": middleware_levels},
             regex={"paths": [route._rx]} if hasattr(route, "_rx") else None,  # type: ignore[reportGeneralTypeIssues]
+            methods=route.methods,
         )
 
         # Use route path as key for direct lookup
@@ -372,6 +373,20 @@ class Future:
                         
         if not matched_route:
             response = Response(body="Not Found", status=404)
+            await response(send)
+            return
+        
+        # MEGABUG FIX: Validate HTTP method matches route's allowed methods
+        request_method = scope.get("method", "GET").upper()
+        route_methods = matched_route.get("methods", [])
+        if request_method not in route_methods:
+            # Return 405 Method Not Allowed with Allow header
+            allow_header = ", ".join(route_methods)
+            response = Response(
+                body=f"Method {request_method} not allowed", #. Allowed methods: {allow_header}",
+                status=405,
+                headers={"Allow": allow_header}
+            )
             await response(send)
             return
             
