@@ -385,6 +385,10 @@ class Future:
                 if response is not None:
                     await response(send)
                     return
+                #elif not isinstance(response, Response):
+                #    raise TypeError(f"Response must be an instance of Response, JSONResponse, or HTTPResponse, got {type(response)}")
+                #else:
+                    #raise Exception("Route found but no handler or middleware found")
                     
         if route_params:
             response = await handler(request, **route_params)

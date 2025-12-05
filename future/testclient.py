@@ -23,6 +23,16 @@ class FutureTestClient:
         response = await self.client.get(url, headers=headers)
         return response
 
+    async def post(self, url: str, json: dict[str, Any] | None = None, data: str | bytes | None = None, headers: dict[str, str] | None = None) -> httpx.Response:
+        if json is not None:
+            response = await self.client.post(url, json=json, headers=headers)
+        elif data is not None:
+            # Use httpx's built-in form data handling
+            response = await self.client.post(url, content=data, headers=headers)
+        else:
+            response = await self.client.post(url, headers=headers)
+        return response
+
     async def websocket_connect(self, url: str, headers: dict[str, str] | None = None) -> Any:
         """Connect to a WebSocket endpoint for testing using ASGI transport."""
         parsed = urlparse(url)
