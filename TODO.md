@@ -1,46 +1,28 @@
-# FIXME
-
-Automatic mapping for GET params work
-
-- Make it work for POST too
-- Inject into scope.context ? or something else?
-- Make sure it works for ALL request types
+# TODO
 
 
-Se på Masonite routes + base Controller. Der har vi __init__ som injecter request og response, så man kan passe både self og request: Request til controller methods og slippe unna python errors og staticmethods
-
-
-# ---
-
+## FIXME
+- [ ] Automatic mapping for GET params work. Make it work for POST too.
+    - [ ] Inject into scope.context ? or something else?
+    - [ ] Make sure it works for ALL request types
+- [ ] Look at Masonite routes + base Controller. It uses `__init__` which injects request and response so you can pass self, request: Request, response: Response to controller methods and avoid Python errors and staticmethod dogshitorators.
+- [ ] Fix Future complaining about duplicate routes which really isnt duplicate routes since they use different HTTP methods for the same path:
+```shell
   File "/home/ad.ialoc.in/n/Documents/git/datalake/.venv/lib/python3.13/site-packages/future/application.py", line 272, in _check_route_conflicts
     raise ValueError(f"Route conflict detected: {route.path} already exists in domain {domain}")
 ValueError: Route conflict detected: /elasticsearch/ already exists in domain localhost
-
-
-Klager over duplicate routes som egentlig ikke er duplicate routes. Det er routes som har samme path, men forskjellig HTTP Method.
-
-FIX1: Oppdater koden til å accounte for ikke kun route.path, men route.path + HTTP Method
-
-FIX2: Bruk httpx instedefor requests. Vi trenger HTTP/2 på alt. Alternativt bruk hypercorn for HTTP/2, men alt skal likevel stå bak nginx.
-
-FIX3: Vurder på nytt om vi skal slice :5000 (port) fra hostname checken. Dritt å debugge med den. Alternativt la debug=True droppe den.
-
-FIX4: Sjekk at både bracket og mustache syntax funker i route defs
-
-FIX5: ensure we verify that HTTP Response is a valid HTTP Response type. python dicts throw this error:
+```
+- [ ] Update the code to account for not only route.path, but route.path AND route.method (same as the MEGABUG?)
+- [ ] Use httpx instead of requests. We need HTTP/2 support on everything. Alternatively use hypercorn for HTTP/2, although everything should be behind an instance of nginx. Uvicorn has HTTP/2 support on its roadmap but it is not implemented yet.
+- [ ] Reconsider slicing :5000 (port) from the hostname check? Horrible to debug with it. Alternatively let debug=True slice it away? Or just debug by setting Host header and curl towards 127.0.0.1? Maybe the best way to do it actually...
+- [ ] Check that both bracket and mustache syntax works in route definitions
+- [ ] Ensure we verify that HTTP Response is a valid HTTP Response type. Python dicts currently throw this error:
+```shell
   File "/home/ad.ialoc.in/n/Documents/git/datalake/.venv/lib/python3.13/site-packages/future/application.py", line 465, in __call__
     await self.handle_http_request(scope, receive, send)
   File "/home/ad.ialoc.in/n/Documents/git/datalake/.venv/lib/python3.13/site-packages/future/application.py", line 385, in handle_http_request
     await response(send)
           ~~~~~~~~^^^^^^
 TypeError: 'dict' object is not callable
-
-
-
-MEGABUG FOUND:
-
-Can POST to GET routes??? What the fuck? Why do we not check that?
-
-Incorrect method for a route should be DROPPED instantly
-
-
+```
+- [ ] Review requests.py body() and json() and decide what to use

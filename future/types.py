@@ -41,3 +41,4 @@ class RouteConfig(TypedDict):
     middleware: dict[str, list[dict[str, list[Any]]]]  # type: ignore
     regex: dict[str, list[re.Pattern[str] | re.Pattern[bytes]]] | None
     methods: list[str]
+    route: Any  # FIXME: Added in temporarily because of a regression in the regex matching causing /users/123/test to not match /users/123/test/. Not sure when this happened. This shouldnt be needed.

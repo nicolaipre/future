@@ -129,8 +129,14 @@ class Route:
         self._rx = re.compile(b"^" + pattern + b"$", re.IGNORECASE)
         self.param_names = param_names
 
-    def match(self, request_path: bytes) -> Optional[RouteMatch]:
-        # print("Matching on reqpath:", request_path, "using regex:", self._rx)
+    def match(self, request_method: str, request_path: bytes) -> Optional[RouteMatch]:
+        print("Matching on request type", self.methods, "for path:", request_path, "using regex:", self._rx)
+        
+        # Check if the HTTP method matches the allowed methods for this route
+        if request_method not in self.methods:
+            return None
+    
+        # Check if the request path matches the compiled regex pattern for this route
         match = self._rx.match(request_path)
         if not match:
             return None

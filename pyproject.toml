@@ -43,6 +43,7 @@ mypy = "^1.9.0"
 types-psutil = "^7.0.0.20250601"
 build = "^1.2.2.post1"
 twine = "^6.1.0"
+ipykernel = "^7.1.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -54,10 +55,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
-# Your code shows consistent use of 120+ character lines
-line-length = 160
+# Keep everything (including function definitions) on one line by using a very large line length
+line-length = 256
 
-[tool.ruff.lint]
 # Select specific rules based on your codebase
 select = [
     "E",   # pycodestyle
@@ -86,15 +86,17 @@ ignore = [
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+# Avoid multiline formatting triggered by magic trailing commas
+skip-magic-trailing-comma = true
 
-[tool.ruff.lint.isort]
+[tool.ruff.isort]
 lines-after-imports = 2
 lines-between-types = 1
 force-single-line = false
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
-[tool.ruff.lint.per-file-ignores]
-"*.py" = ["TCH"]  # Ignore type checking hints issues
+[tool.ruff.per-file-ignores]
+#"*.py" = ["TCH"]  # Ignore type checking hints issues
 
 [build-system]
 requires = ["poetry-core"]
@@ -105,7 +107,7 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-disable_error_code = ["misc", "no-self-argument"]
+disable_error_code = ["misc"]  # no-self-argument is not a mypy error code
 
 [tool.poetry.scripts]
 future = "future.cli:main"

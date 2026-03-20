@@ -71,7 +71,7 @@ class GraphQLController(Controller):
         return JSONResponse(data=result.data)
 
 class DebugController(Controller):
-    async def test(request: Request) -> Response:
+    async def test(request: Request) -> Response:  # type: ignore[no-self]
         return Response(body="lolok")
 
     async def hello(request: Request) -> JSONResponse:  # type: ignore[no-self]

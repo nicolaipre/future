@@ -1,6 +1,7 @@
-from typing import Any
-
 from future.types import ASGIReceive, ASGIScope
+from urllib.parse import parse_qs
+from typing import Any
+import json
 
 
 class Request:
@@ -14,6 +15,7 @@ class Request:
         # self.host = dict(scope['headers']).get(b'host', b'').decode()
         self.context: dict[str, Any] = {}  # for custom data we inject into the request
         self.scheme = scope["scheme"]
+        self.session = {}
 
     async def body(self) -> bytes:
         more_body = True
@@ -24,8 +26,10 @@ class Request:
             more_body = message.get("more_body", False)
         return body
 
-    """
-    async def json(self) -> dict:
+    async def json(self) -> dict[str, Any]:
         body = await self.body()
         return json.loads(body)
-    """
+    
+    async def form(self) -> dict[str, Any]:
+        body = await self.body()
+        return parse_qs(body.decode("utf-8"))

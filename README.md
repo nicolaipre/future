@@ -1,5 +1,5 @@
 # ✨ Future ✨
-Next Gen. [ASGI](https://github.com/django/asgiref) Framework for minimal Web APIs
+[ASGI](https://github.com/django/asgiref) Framework for minimal Web APIs
 - [ASGI](https://asgi.readthedocs.io/)
 - [ASGI GitHub](https://github.com/django/asgiref)
 - [ASGI Fundamentals](https://www.youtube.com/watch?v=ai7y--6ElAE&list=PLJ_usHaf3fgO_PgB1zTSlKVSqDdvh49bi)

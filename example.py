@@ -11,7 +11,8 @@ from future.settings import APP_DEBUG, APP_DOMAIN, APP_LOG_LEVEL, APP_NAME
 
 
 routes: Sequence[Route | RouteGroup] = [  # type: ignore
-                                        
+                              
+    Get(path="/users/<int:user_id>/<str:arg2>", endpoint=DebugController.args, name="getUserInfo"),  # type: ignore[reportAttributeAccessIssue]          
     Get(path="/", endpoint=WelcomeController.root, name="Welcome"),  # , middlewares=[TestMiddlewareRequest]),  # type: ignore[reportAttributeAccessIssue]
     Get(path="/test", endpoint=DebugController.test, name="test"),  # , scopes=["debug"]),  # type: ignore[reportAttributeAccessIssue]
     Get(path="/graphql", endpoint=GraphQLController.query, name="GraphQL"),  # , scopes=["user"]),   # type: ignore[reportAttributeAccessIssue]

@@ -27,7 +27,7 @@ class Response:
             headers = {}
 
         # Ensure content-type is set
-        if "content-type" not in headers and content_type:
+        if not any(key.lower() == "content-type" for key in headers) and content_type:
             headers["content-type"] = content_type
 
         self.headers = [[key.encode(), value.encode()] for key, value in headers.items()]

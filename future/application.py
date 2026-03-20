@@ -168,6 +168,7 @@ class Future:
             middleware={"levels": middleware_levels},
             regex={"paths": [route._rx]} if hasattr(route, "_rx") else None,  # type: ignore[reportGeneralTypeIssues]
             methods=route.methods,
+            route=route,  # FIXME: Added in temporarily because of a regression in the regex matching causing /users/123/test to not match /users/123/test/. Not sure when this happened. This shouldnt be needed.
         )
 
         # Use route path as key for direct lookup
@@ -277,6 +278,8 @@ class Future:
 
     def _validate_domain_access(self, host_domain: str) -> bool:
         """Validate if the host domain is allowed to access routes."""
+        log.debug(f"Validating domain access for host: '{host_domain}' against configured domain: '{self.domain}'")
+        
         # Optimization: Check cache first
         if host_domain in self._domain_cache:
             return self._domain_cache[host_domain]
@@ -338,85 +341,58 @@ class Future:
 
 
     async def handle_http_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
+        # Grab the request object
         request = Request(scope, receive)
-        request_path = request.path.encode()
+        #request_method = request.method
+        #request_path = request.path.encode()
         
-        # Optimization: Faster host domain extraction
+        # Check host header for domain validation
         host_domain = request.host.split("/")[0] if "/" in request.host else request.host
-        
         if not self._validate_domain_access(host_domain):
             response = Response(body="Forbidden", status=403)
             await response(send)
             return
-            
+        
         # In domainless mode, always use the empty string key for lookup
         key = "" if getattr(self, "domainless_mode", False) else host_domain
         domain_routes = self.routes.get(key, {})
         
-        # Optimization: Direct path lookup first, then regex matching
         matched_route = None
         route_params = None
         
-        # Try direct path match first (fastest)
-        if request.path in domain_routes:
-            matched_route = domain_routes[request.path]
-        else:
-            # Fall back to regex matching (slower)
-            for route_config in domain_routes.values():
-                route = route_config.get("route", None)
-                if route and hasattr(route, "match"):
-                    route_match = route.match(request_path)
-                    if route_match:
-                        matched_route = route_config
-                        route_params = route_match.params
-                        break
-                        
+        for route_path, route_config in domain_routes.items():
+            route = route_config.get("route", None)
+            if route and hasattr(route, "match"):
+                route_match = route.match(request.method, request.path.encode())
+                if route_match:
+                    matched_route = route_config
+                    route_params = route_match.params
+                    break
+            else:
+                if route_path == request.path:
+                    matched_route = route_config
+                    break
         if not matched_route:
             response = Response(body="Not Found", status=404)
             await response(send)
             return
-        
-        # MEGABUG FIX: Validate HTTP method matches route's allowed methods
-        request_method = scope.get("method", "GET").upper()
-        route_methods = matched_route.get("methods", [])
-        if request_method not in route_methods:
-            # Return 405 Method Not Allowed with Allow header
-            allow_header = ", ".join(route_methods)
-            response = Response(
-                body=f"Method {request_method} not allowed", #. Allowed methods: {allow_header}",
-                status=405,
-                headers={"Allow": allow_header}
-            )
-            await response(send)
-            return
-            
         handler = matched_route["handler"]
         middleware_levels = matched_route["middleware"]["levels"]
-        
-        # Optimization: Flatten middleware processing
         for level in middleware_levels:
             for m in level["before"]:
                 response = await m.intercept(request)  # type: ignore[reportUnknownMemberType]
                 if response is not None:
                     await response(send)
                     return
-                #elif not isinstance(response, Response):
-                #    raise TypeError(f"Response must be an instance of Response, JSONResponse, or HTTPResponse, got {type(response)}")
-                #else:
-                    #raise Exception("Route found but no handler or middleware found")
-                    
         if route_params:
             response = await handler(request, **route_params)
         else:
             response = await handler(request)
-            
-        # Optimization: Process after middleware in reverse
         for level in reversed(middleware_levels):
             for m in level["after"]:
                 modified_response = await m.intercept(request, response)  # type: ignore[reportUnknownMemberType]
                 if modified_response is not None:
                     response = modified_response
-                    
         await response(send)
 
     async def handle_websocket_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
@@ -441,7 +417,7 @@ class Future:
         route_params = None
 
         for route_path, route_config in domain_routes.items():
-            route = route_config.get("route", None)
+            route = route_config.get("route")
             if route and hasattr(route, "match"):
                 route_match = route.match(request_path)
                 if route_match:
@@ -493,6 +469,7 @@ class Future:
         scope["app"] = self
 
         # Check scope type and handle accordingly...
+        log.debug(f"Received scope type: '{scope['type']}' request for path: {scope.get('path', '')}")
         if scope["type"] == "lifespan":
             log.debug("Handling lifespan stuff...")
             await self.handle_lifespan_request(scope, receive, send)
