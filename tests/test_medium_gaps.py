@@ -6,7 +6,7 @@ from future.middleware import CSRFMiddleware, RateLimitMiddleware, SessionMiddle
 from future.middleware.SessionMiddleware import SESSION_COOKIE_NAME
 from future.migrations.Blueprint import Blueprint
 from future.models import Model
-from future.openapi import rebuild_spec_from_routes
+from future.openapi import openapi_routes, rebuild_spec_from_routes
 from future.request import Request, UploadedFile
 from future.response import Response
 from future.routing import Get, Post, RouteGroup
@@ -155,6 +155,7 @@ def test_openapi_path_params_servers_security():
             "APP_DEBUG": True,
             "OPENAPI": {
                 "enabled": True,
+                "servers": [{"url": "https://api.example.com", "description": "Application"}],
                 "security_schemes": {"bearerAuth": {"type": "http", "scheme": "bearer"}},
                 "security": [{"bearerAuth": []}],
             },
@@ -166,6 +167,38 @@ def test_openapi_path_params_servers_security():
     assert spec["servers"][0]["url"] == "https://api.example.com"
     assert "bearerAuth" in spec["components"]["securitySchemes"]
     assert spec["security"] == [{"bearerAuth": []}]
+
+
+async def test_openapi_servers_from_request_and_subdomains():
+    class Show(Controller):
+        async def show(self) -> Response:
+            return self.response.json({"ok": True})
+
+    app = Future(
+        lifespan=Lifespan(),
+        config={
+            "APP_NAME": "t",
+            "APP_DOMAIN": "example.com",
+            "APP_DEBUG": True,
+            "OPENAPI": {"enabled": True, "auto_routes": False, "servers": None},
+        },
+    )
+    app.add_routes(
+        [
+            RouteGroup(name="Docs", routes=openapi_routes(uis=["scalar"])),
+            RouteGroup(name="Api", subdomain="api", routes=[Get("/items", Show.show, "items")]),
+            RouteGroup(name="Apex", routes=[Get("/health", Show.show, "health")]),
+        ]
+    )
+    async with FutureTestClient(app) as client:
+        response = await client.get("http://127.0.0.1/openapi.json", headers={"Host": "example.com:8000"})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["servers"][0]["url"] == "http://api.example.com:8000"
+        assert {s["url"] for s in body["servers"]} >= {"http://api.example.com:8000", "http://example.com:8000"}
+        assert body["paths"]["/items"]["servers"][0]["url"] == "http://api.example.com:8000"
+        assert body["paths"]["/health"]["servers"][0]["url"] == "http://example.com:8000"
+        assert "x-future-hosts" not in body["paths"]["/items"]
 
 
 async def test_csrf_and_rate_limit():

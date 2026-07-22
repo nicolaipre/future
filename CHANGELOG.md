@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.0.2] - 2026-07-23
+### Fixed
+- OpenAPI `servers` built at serve time from `request.scheme` + RouteGroup hosts (no hardcoded `https://APP_DOMAIN`); explicit `OPENAPI.servers` still wins
+- Document `servers` prefer non-docs hosts so Scalar Test Request defaults to subdomain APIs; path-level `servers` keep the per-route host
+- Docs UIs load the spec via a path-relative URL so the page scheme/host are preserved
+- Scalar `onBeforeRequest` sets `baseUrl` from the RouteGroup host map for cross-subdomain Try-it
+
+
 ## [1.0.1] - 2026-07-23
 ### Fixed
 - `RouteGroup` no longer mutates shared `Route.path` in place (reload no longer stacks prefixes, e.g. `/api` → `/api/api`)
