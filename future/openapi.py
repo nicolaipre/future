@@ -203,6 +203,7 @@ def rebuild_spec_from_routes(routes_by_domain, app_config=None):
 
 
 def openapi_routes(uis=None, path_prefix=None, config=None):
+    # Paths are root-relative (`/scalar`, …). Mount with RouteGroup(prefix=...); path_prefix only affects HTML spec URLs.
     from future.controllers import OpenAPIController
     global _CONFIG
     cfg = get_openapi_config(config)
@@ -214,15 +215,15 @@ def openapi_routes(uis=None, path_prefix=None, config=None):
     if uis is not None:
         _CONFIG["uis"] = list(selected)
     routes = [
-        Get(f"{prefix}/openapi.json", OpenAPIController.openapi, "openapi"),
+        Get("/openapi.json", OpenAPIController.openapi, "openapi"),
     ]
     if "swagger" in selected:
-        routes.append(Get(f"{prefix}/swagger-config", OpenAPIController.swagger_config, "swagger-config"))
-        routes.append(Get(f"{prefix}/docs", OpenAPIController.swagger, "docs"))
+        routes.append(Get("/swagger-config", OpenAPIController.swagger_config, "swagger-config"))
+        routes.append(Get("/docs", OpenAPIController.swagger, "docs"))
     if "redoc" in selected:
-        routes.append(Get(f"{prefix}/redoc", OpenAPIController.redoc, "redoc"))
+        routes.append(Get("/redoc", OpenAPIController.redoc, "redoc"))
     if "scalar" in selected:
-        routes.append(Get(f"{prefix}/scalar", OpenAPIController.scalar, "scalar"))
+        routes.append(Get("/scalar", OpenAPIController.scalar, "scalar"))
     if "rapidoc" in selected:
-        routes.append(Get(f"{prefix}/rapidoc", OpenAPIController.rapidoc, "rapidoc"))
+        routes.append(Get("/rapidoc", OpenAPIController.rapidoc, "rapidoc"))
     return routes

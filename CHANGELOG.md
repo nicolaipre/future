@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [1.0.1] - 2026-07-23
 ### Fixed
+- `RouteGroup` no longer mutates shared `Route.path` in place (reload no longer stacks prefixes, e.g. `/api` → `/api/api`)
+- `RouteGroup` prefix + route `path="/"` joins as the prefix alone (`/indexes`, not `/indexes/`)
+- `openapi_routes()` returns root-relative paths; mount via `RouteGroup(prefix=...)` (no double `/api` when both were applied)
+- Docs `RouteGroup` mount syncs OpenAPI `path_prefix` so UI links point at the mounted spec URL
 - `Future.run` passes the app instance when `workers=1` and reload is off; uses `config["APP_ASGI"]` (default `run:app`) for reload / multi-worker so `future run` works
 - `BaseAuthentication` alias on `Authentication` so Azure AD / Kerberos stubs import cleanly
 - `Database.transaction()` guards missing/`begin`-less clients with `NotImplementedError`
@@ -17,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `request.route` set for matched routes (`ScopeValidationMiddleware`); UUID route pattern is hex-only
 
 ### Changed
+- CLI `migrate` / `rollback` / `make:migration` use Orator-style colored output (`✓ Migrated` / `✓ Rolled back` + blue filename)
 - Moved Lifespan to `future.lifespan` (ASGI lifecycle; tasks stay in `future.tasks`)
 - Removed the unused per-status exception subclasses (`NotFoundException`, …)
 - 404 / 403 / 405 from the router now return the same JSON error shape as raised `HTTPException`s
