@@ -35,8 +35,8 @@ jobs:
 
       - name: Run linting & type checking
         run: |
-          poetry run ruff format --check --diff future
-          poetry run ruff check future
+          # Check only — do NOT run `ruff format` in CI (would rewrite long one-line defs).
+          poetry run ruff check future tests
           poetry run mypy future
           poetry run mypy tests
 

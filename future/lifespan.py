@@ -3,11 +3,11 @@ import asyncio
 from typing import Any
 
 from future.logger import log
-from future.scheduler import CronScheduler, Task
+from future.tasks.scheduler import CronScheduler, Task
 
 
 class Lifespan:
-    """Application lifespan manager with integrated cron scheduler."""
+    """ASGI application lifespan: startup / shutdown, with optional cron tasks."""
 
     def __init__(self, startup_tasks: list[Task] | None = None, shutdown_tasks: list[Task] | None = None, cron_tasks: list[Task] | None = None) -> None:
         self.app = None

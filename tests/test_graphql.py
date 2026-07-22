@@ -2,7 +2,7 @@ from future.application import Future
 from future.controllers import GraphQLController
 from future.lifespan import Lifespan
 from future.routing import Get, RouteGroup
-from future.testclient import FutureTestClient
+from future.testing import FutureTestClient
 
 
 async def test_graphql() -> None:

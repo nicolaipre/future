@@ -2,6 +2,7 @@ import re
 
 from typing import Any, Callable, Optional, TypedDict
 
+from future.logger import log
 from future.middleware import Middleware
 
 
@@ -33,7 +34,7 @@ class Route:
         "path": r".*",
         "int": r"\d+",
         "float": r"\d+(?:\.\d+)?",
-        "uuid": r"[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}",
+        "uuid": r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
     }
 
     def __init__(
@@ -123,25 +124,22 @@ class Route:
 
             param_names.append(param_name)
 
-        if len(pattern) > 1 and not pattern.endswith(b"*"):
+        if len(pattern) > 1 and not pattern.endswith(b"*") and not self.strict_slashes:
             pattern = pattern + b"/?"
 
         self._rx = re.compile(b"^" + pattern + b"$", re.IGNORECASE)
         self.param_names = param_names
 
     def match(self, request_method: str, request_path: bytes) -> Optional[RouteMatch]:
-        print("Matching on request type", self.methods, "for path:", request_path, "using regex:", self._rx)
-        
+        log.debug("Matching on request type %s for path: %s using regex: %s", self.methods, request_path, self._rx)
         # Check if the HTTP method matches the allowed methods for this route
         if request_method not in self.methods:
             return None
-    
+
         # Check if the request path matches the compiled regex pattern for this route
         match = self._rx.match(request_path)
         if not match:
             return None
-
-        # route_match = RouteMatch(self, match.groupdict() if self.param_names else None)
 
         # Convert bytes values to strings in groupdict
         params = None

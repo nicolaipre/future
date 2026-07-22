@@ -33,21 +33,21 @@ class ColoredFormatter(logging.Formatter):
 # Configure logging using settings
 logging.config.dictConfig(LOGGING_CONFIG)
 
-# Get the logger and apply colored formatter
-logger = logging.getLogger("future")
-if hasattr(logger, "handlers") and logger.handlers:
-    for handler in logger.handlers:
-        handler.setFormatter(ColoredFormatter("%(message)s"))
-
-# Start queue handler if it exists
-queue_handler = logging.getHandlerByName("queue_handler")
-if queue_handler is not None:
-    # Type check for QueueHandler which has listener attribute
-    if isinstance(queue_handler, logging.handlers.QueueHandler):
-        listener = getattr(queue_handler, "listener", None)
-        if listener is not None:
-            listener.start()
-            atexit.register(listener.stop)
-
-# Create logger instance
 log = logging.getLogger("future")
+formatter = ColoredFormatter("%(message)s")
+
+# QueueHandler itself does not format; the listener's stdout handler does.
+# Handler level NOTSET so Future's log.setLevel(APP_DEBUG) alone controls filtering.
+queue_handler = logging.getHandlerByName("queue_handler")
+if queue_handler is not None and isinstance(queue_handler, logging.handlers.QueueHandler):
+    listener = getattr(queue_handler, "listener", None)
+    if listener is not None:
+        for handler in listener.handlers:
+            handler.setFormatter(formatter)
+            handler.setLevel(logging.NOTSET)
+        listener.start()
+        atexit.register(listener.stop)
+else:
+    for handler in log.handlers:
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.NOTSET)

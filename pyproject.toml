@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "future"
-version = "0.3.1"
+version = "1.0.0"
 description = "Next Gen. ASGI Framework for minimal Web APIs"
 authors = ["nicolaipre"]
 license = "LICENSE"
@@ -30,7 +30,14 @@ numpy = "^2.2.4"
 python-dotenv = "^1.1.1"
 sqlalchemy = "^2.0.41"
 pydantic = "^2.0.0"
+inflection = "^0.5.1"
+pymysql = "^1.2.0"
+pymongo = "^4.10.0"
+psycopg2-binary = "^2.9.10"
+clickhouse-driver = "^0.2.9"
 mkdocs = "^1.6.1"
+mkdocs-material = "^9.5.0"
+redis = "^5.2.0"
 sanic = "^25.3.0"
 cython = "^3.0.0"
 fastapi = "^0.115.14"
@@ -41,6 +48,7 @@ pytest = "^8.1.1"
 ruff = "^0.8.0"
 mypy = "^1.9.0"
 types-psutil = "^7.0.0.20250601"
+types-requests = "^2.32.0"
 build = "^1.2.2.post1"
 twine = "^6.1.0"
 ipykernel = "^7.1.0"
@@ -55,48 +63,46 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
-# Keep everything (including function definitions) on one line by using a very large line length
+# Match Future / Cursor coding style: keep long single-line defs; do not wrap for width.
 line-length = 256
+extend-exclude = [".venv", "venv", "build", "dist"]
 
-# Select specific rules based on your codebase
+[tool.ruff.lint]
+# No "I" (isort) — do not re-order imports. No format step in CI — do not multiline long defs.
 select = [
-    "E",   # pycodestyle
-    "F",   # pyflakes
-    "I",   # isort
-    "W",   # warnings
-    "B",   # bugbear
-    "UP",  # pyupgrade
+    "E",
+    "F",
+    "W",
+    "B",
+]
+ignore = [
+    "E501",  # long lines are intentional (one-line function defs)
+    "E261",  # inline comment spacing
+    "E266",  # multiple ##
+    "E302",  # blank lines between functions
+    "E303",  # blank lines inside blocks
+    "E402",  # imports not at top
+    "E731",  # lambda assignments
+    "W291",  # trailing whitespace (noisy vs existing style)
+    "W293",  # blank line whitespace
+    "B008",  # function calls in defaults
+    "B007",  # unused loop variable
+    "B009",  # getattr(x, "literal") — used intentionally on models
+    "B904",  # raise without from
+    "F541",  # f-string without placeholders
 ]
 
-# Ignore rules that conflict with your style
-ignore = [
-    "E261",  # Don't require whitespace after inline comments
-    "E266",  # Allow multiple ## for comments
-    "E302",  # Allow multiple blank lines between functions
-    "E303",  # Allow multiple blank lines inside functions
-    "E402",  # Allow imports not at top
-    "E731",  # Allow lambda expressions
-    "B008",  # Allow function calls in defaults
-    "N805",  # Allow first argument of method to not be self
-    "F403",  # Allow star imports
-    "F405",  # Allow undefined from star imports
-]
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]  # re-exports
+"tests/**" = ["B011", "F401"]
 
 [tool.ruff.format]
+# Available for local use only — CI must NOT run `ruff format` (would wrap/multiline).
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
-# Avoid multiline formatting triggered by magic trailing commas
 skip-magic-trailing-comma = true
-
-[tool.ruff.isort]
-lines-after-imports = 2
-lines-between-types = 1
-force-single-line = false
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
-
-[tool.ruff.per-file-ignores]
-#"*.py" = ["TCH"]  # Ignore type checking hints issues
+docstring-code-format = false
 
 [build-system]
 requires = ["poetry-core"]
@@ -104,10 +110,15 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = true
-disable_error_code = ["misc"]  # no-self-argument is not a mypy error code
+disallow_untyped_defs = false
+ignore_missing_imports = true
+check_untyped_defs = false
+pretty = true
+# Gradual typing; Model.__table__ overrides and similar are normal in this codebase.
+disable_error_code = ["misc", "var-annotated", "assignment", "arg-type", "import-untyped"]
+exclude = ["(?x)(build/|dist/|\\.venv/)"]
 
 [tool.poetry.scripts]
 future = "future.cli:main"

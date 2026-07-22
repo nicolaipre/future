@@ -24,8 +24,8 @@ jobs:
         run: |
           echo "🔍 Scanning for decorators..."
           
-          # Find all Python files
-          python_files=$(find . -name "*.py" -not -path "./.venv/*" -not -path "./venv/*" -not -path "./__pycache__/*" -not -path "./.git/*")
+          # Package only — tests may use unittest.mock.patch as a context manager / decorator
+          python_files=$(find future -name "*.py" -not -path "*/__pycache__/*")
           
           # Check for decorators (lines starting with @)
           decorator_lines=$(grep -n "^[[:space:]]*@" $python_files 2>/dev/null || true)

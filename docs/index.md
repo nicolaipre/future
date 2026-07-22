@@ -1,138 +1,88 @@
-# Future Framework Documentation
+# Future
+Minimal, decorator-free [ASGI](https://asgi.readthedocs.io/) framework for Python web APIs.
 
-Welcome to the Future framework documentation. Future is a minimalist, decorator-free ASGI web framework for Python that emphasizes clarity and explicit code patterns.
+Future favors **explicit code**: controllers and middleware receive `Request` / `Response` via a base `__init__`, routes are plain lists, and there are no route decorators.
 
-## What is Future?
+## What works today
+| Area | Status |
+|------|--------|
+| HTTP routing + path params | Solid |
+| Controllers (`self.request` / `self.response`) | Solid |
+| Middleware `before` / `after` | Solid |
+| Response builder (`json`, `html`, `text`, …) | Solid |
+| OpenAPI UIs (Swagger, ReDoc, Scalar, RapiDoc) | Solid |
+| Sessions (opt-in cookie middleware) | Solid |
+| Active Record (SQLite, MySQL, Postgres, Elasticsearch, MongoDB, ClickHouse, Redis) | Usable |
+| Migrations / seeds | Usable (driver-dependent) |
+| Lifespan + interval scheduler | Solid |
+| CLI (`init`, `routes`, `migrate`, `seed`, `make:*`, `run`) | Solid |
+| WebSockets | Usable (duplex echo) |
+| Auth package | Stubs only |
+| GraphQL | Demo only |
+| MkDocs | Material theme |
 
-Future is a modern Python web framework built on ASGI that:
+See [Gaps and roadmap](gaps.md) for what is missing on purpose vs unfinished.
 
-- **Avoids decorators** - Uses explicit, clear code patterns
-- **Minimalist design** - Focuses on simplicity and readability
-- **Type-safe** - Full mypy support with comprehensive type hints
-- **Modern features** - WebSocket support, GraphQL, scheduled tasks, and more
-- **Developer-friendly** - Built-in testing, CLI tools, and comprehensive documentation
-
-## Key Features
-
-- **HTTP Routing** - Simple, parameterized routes with full HTTP method support
-- **Middleware System** - Flexible middleware for cross-cutting concerns
-- **WebSocket Support** - Real-time communication with WebSocket routes
-- **GraphQL Integration** - Built-in GraphQL support with Strawberry
-- **Scheduled Tasks** - Native cron-like scheduler for background tasks
-- **Lifespan Management** - Startup and shutdown task coordination
-- **Testing Tools** - Built-in test client for HTTP and WebSocket testing
-- **CLI Tools** - Project scaffolding and route listing utilities
-
-## Quick Start
-
+## Quick start
 ```python
 from future.application import Future
-from future.controllers import WelcomeController
-from future.routing import Get
+from future.controllers import Controller
+from future.lifespan import Lifespan
+from future.response import Response
+from future.routing import Get, RouteGroup
+
+class HomeController(Controller):
+    async def index(self) -> Response:
+        return self.response.text("Hello from Future")
 
 routes = [
-    Get(path="/", endpoint=WelcomeController.root, name="Welcome")
+    RouteGroup(
+        name="Main",
+        routes=[Get("/", HomeController.index, "home")],
+    )
 ]
 
-app = Future()
-app.add_routes(routes=routes)
+config = {"APP_DOMAIN": "", "APP_NAME": "Demo"}
+app = Future(lifespan=Lifespan([], [], []), config=config)
+app.add_routes(routes)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="127.0.0.1", port=8000)
 ```
 
-## Documentation Sections
+`Future` **requires** a `Lifespan` instance (startup / shutdown / cron tasks).
 
-### [Installation](installation.md)
-Complete installation guide including dependencies, development setup, and configuration.
-
-### [Usage Guide](usage.md)
-Comprehensive guide covering all framework features:
-- Basic application setup and configuration
-- Routing with parameters and HTTP methods
-- Middleware creation and registration
-- Lifespan management for startup/shutdown tasks
-- WebSocket implementation and real-time communication
-- Scheduled tasks and background job management
-- JSON responses and error handling
-- GraphQL integration with Strawberry
-- Testing with the built-in test client
-- Project structure and best practices
-
-### [Quick Reference](quick-reference.md)
-Fast reference for common patterns and code examples:
-- Basic setup and configuration
-- Route definitions and patterns
-- Middleware implementation
-- Response types and status codes
-- WebSocket handlers
-- Lifespan and scheduler setup
-- Route groups and organization
-- GraphQL schema definition
-- Testing patterns
-- Error handling
-- CLI commands
-
-### [Examples](examples.md)
-Complete working examples demonstrating:
-- Basic API server with user management
-- Real-time chat application with WebSockets
-- GraphQL API with user and post management
-- Scheduled task manager with background jobs
-- Authentication system with JWT middleware
-
-## Framework Philosophy
-
-Future follows these core principles:
-
-1. **Explicit over Implicit** - Clear, readable code without magic
-2. **No Decorators** - Avoids decorator patterns in favor of explicit method calls
-3. **Type Safety** - Comprehensive type hints and mypy support
-4. **Minimalism** - Focus on essential features with clean APIs
-5. **Developer Experience** - Excellent tooling and documentation
-
-## Getting Help
-
-- **GitHub Issues** - Report bugs and request features
-- **Documentation** - Comprehensive guides and examples
-- **Examples** - Check the `example.py` file for working examples
-- **Tests** - Browse test files for usage patterns
-
-## Contributing
-
-We welcome contributions! Please see our contributing guidelines and ensure all code follows our style guide with proper type hints and no decorators.
-
-## 🛠️ Development
-
-```bash
-# Run tests
-poetry run pytest
-
-# Check code quality
-poetry run ruff check .
-poetry run mypy .
-
-# Build documentation
-poetry run mkdocs build
-poetry run mkdocs serve
+## Request flow
+```mermaid
+flowchart TD
+  asgi[ASGI http scope]
+  req[Request]
+  res[Response builder]
+  before[middleware.before]
+  short{Response returned?}
+  ctrl[Controller action]
+  after[middleware.after reverse]
+  send[Send response]
+  asgi --> req --> res --> before --> short
+  short -->|yes| send
+  short -->|no| ctrl --> after --> send
 ```
 
-## 📦 Installation
+## Documentation
+- [Installation](installation.md)
+- [Getting started](getting-started.md)
+- [HTTP: Request, Response, Middleware](http.md)
+- [Routing](routing.md)
+- [Database and models](database.md)
+- [OpenAPI](openapi.md)
+- [Lifespan and tasks](lifespan-tasks.md)
+- [CLI](cli.md)
+- [Quick reference](quick-reference.md)
+- [Examples](examples.md)
+- [Gaps and roadmap](gaps.md)
 
-```bash
-pip install future-api
-```
-
-Or with Poetry:
-
-```bash
-poetry add future-api
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our GitHub repository for contribution guidelines.
-
-## 📄 License
-
-This project is licensed under the MIT License. 
+## Design rules
+1. **No decorators** on framework or app code paths we control.
+2. **Explicit over magic** — prefer readable dispatch over IoC containers.
+3. **Opt-in features** — sessions, OpenAPI UIs, and DB drivers are chosen by the app.
+4. **Agnostic models** — same Active Record API across drivers that implement it.

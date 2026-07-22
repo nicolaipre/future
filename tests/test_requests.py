@@ -1,15 +1,15 @@
 from future.application import Future
 from future.lifespan import Lifespan
 from future.routing import Post
-from future.testclient import FutureTestClient
+from future.testing import FutureTestClient
 
 
 async def test_post_json_data() -> None:
     """Test POST request with JSON data."""
-    from future.requests import Request
-    from future.responses import Response
+    from future.request import Request
+    from future.response import Response
     
-    async def post_handler(request: Request) -> Response:
+    async def post_handler(request: Request, response: Response) -> Response:
         json_data = await request.json()
         return Response(body=f"Received: {json_data}", status=200)
 
@@ -41,11 +41,10 @@ async def test_post_json_data() -> None:
 
 async def test_post_form_data() -> None:
     """Test POST request with form data."""
-    from future.requests import Request
-    from future.responses import Response
+    from future.request import Request
+    from future.response import Response
     
-    async def form_handler(request: Request) -> Response:
-        # For form data, we'll need to parse it manually since we don't have a form() method yet
+    async def form_handler(request: Request, response: Response) -> Response:
         form_data = await request.form()
         return Response(body=f"Received form: {form_data}", status=200)
     
@@ -64,10 +63,12 @@ async def test_post_form_data() -> None:
 
     async with FutureTestClient(app) as client:
         url = "http://127.0.0.1/form"
-        form_data = "Some example post data"
+        form_data = "message=Hello+form&number=42&blank="
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
         response = await client.post(url, data=form_data, headers=headers)
         assert response.status_code == 200
-        assert "Received form: {'Some example post data': ['']}" in response.text
+        assert "Hello form" in response.text
+        assert "42" in response.text
+        assert "'blank': ''" in response.text

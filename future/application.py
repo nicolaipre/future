@@ -1,7 +1,6 @@
 import platform
-import base64
-import json
 import sys
+import logging
 import traceback
 
 from collections.abc import Sequence
@@ -16,17 +15,14 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from future.exceptions import ErrorHandler, HTTPException
 from future.logger import log
 from future.middleware import Middleware
-from future.requests import Request
-from future.responses import Response
+from future.openapi import get_openapi_config, openapi_routes, rebuild_spec_from_routes, set_openapi_config, spec_path
+from future.request import Request
+from future.response import Response, WebSocketResponse
 from future.routing import Route, RouteGroup
 from future.types import AsgiEventType, ASGIReceive, ASGIScope, ASGISend, RouteConfig
-
-SESSION_COOKIE_NAME = "session"
-SESSION_COOKIE_PATH = "/"
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
 
 
 """
@@ -82,6 +78,10 @@ class Future:
         self.lifespan = lifespan
         self.routes: dict[str, dict[str, RouteConfig]] = {}
         self.config = config or {}
+        self.databases = self.config.get("DATABASES")
+        if self.databases:
+            from future.databases.Connections import Connections
+            Connections().set_connection_details(self.databases)
 
         domain = self.config.get("APP_DOMAIN", "")
 
@@ -112,11 +112,28 @@ class Future:
         
         # Optimization: Cache for domain validation
         self._domain_cache: dict[str, bool] = {}
+        set_openapi_config(self.config)
+        log.setLevel(logging.DEBUG if bool(self.config.get("APP_DEBUG")) else logging.INFO)
 
     def set_config(self, config: dict[str, Any]) -> None:
         self.config = config
+        set_openapi_config(self.config)
+        log.setLevel(logging.DEBUG if bool(self.config.get("APP_DEBUG")) else logging.INFO)
 
-    def _add_route(self, route: Route, subdomain: str = "", parent_middlewares: Optional[list[Middleware]] = None) -> None:
+    def _resolve_controller_action(self, endpoint: Any) -> tuple[Any, str | None]:
+        qual = getattr(endpoint, "__qualname__", "") or ""
+        mod_name = getattr(endpoint, "__module__", None)
+        if "." in qual and mod_name:
+            cls_name = qual.rsplit(".", 1)[0]
+            if "." not in cls_name:
+                mod = sys.modules.get(mod_name)
+                if mod is not None:
+                    cls = getattr(mod, cls_name, None)
+                    if cls is not None:
+                        return cls, endpoint.__name__
+        return None, None
+
+    def _add_route(self, route: Route, subdomain: str = "", parent_middlewares: Optional[list[Middleware]] = None, group: Optional[dict[str, str]] = None) -> None:
         """Internal method to add single routes to the application.
 
         Args:
@@ -130,56 +147,35 @@ class Future:
         self.route_count += 1
         self.registered_domains.add(key)
 
-        # Build hierarchical middleware structure
-        middleware_levels = []
-
-        # Add parent middlewares first (if any)
+        middleware_classes: list[Any] = []
         if parent_middlewares:
-            parent_before = []
-            parent_after = []
-            for middleware in parent_middlewares:
-                if middleware.attach_to == "request":
-                    parent_before.append(middleware)
-                elif middleware.attach_to == "response":
-                    parent_after.append(middleware)
+            middleware_classes.extend(sorted(parent_middlewares, key=lambda m: m.priority))
+        middleware_classes.extend(sorted(route.middlewares, key=lambda m: m.priority))
 
-            # Sort parent middlewares by priority
-            parent_before.sort(key=lambda m: m.priority)  # type: ignore[reportUnknownMemberType]
-            parent_after.sort(key=lambda m: m.priority)  # type: ignore[reportUnknownMemberType]
+        controller_cls, action = self._resolve_controller_action(route.endpoint)
 
-            middleware_levels.append(
-                {
-                    "before": parent_before,
-                    "after": parent_after,
-                }
-            )
-
-        # Add route-specific middlewares
-        route_before = []
-        route_after = []
-        for middleware in route.middlewares:
-            if middleware.attach_to == "request":
-                route_before.append(middleware)
-            elif middleware.attach_to == "response":
-                route_after.append(middleware)
-
-        # Sort route middlewares by priority
-        route_before.sort(key=lambda m: m.priority)  # type: ignore[reportUnknownMemberType]
-        route_after.sort(key=lambda m: m.priority)  # type: ignore[reportUnknownMemberType]
-
-        middleware_levels.append({"before": route_before, "after": route_after})
-
-        # Create route config with hierarchical middleware structure
         route_config = RouteConfig(
             handler=route.endpoint,
-            middleware={"levels": middleware_levels},
+            controller=controller_cls,
+            action=action,
+            middleware={"classes": middleware_classes},
             regex={"paths": [route._rx]} if hasattr(route, "_rx") else None,  # type: ignore[reportGeneralTypeIssues]
             methods=route.methods,
             route=route,  # FIXME: Added in temporarily because of a regression in the regex matching causing /users/123/test to not match /users/123/test/. Not sure when this happened. This shouldnt be needed.
+            group=group or {"name": "", "prefix": "", "subdomain": ""},
         )
 
-        # Use route path as key for direct lookup
-        self.routes[key][route.path] = route_config
+        self._check_route_conflicts(route, key)
+        # Path + methods so Get("/x") and Post("/x") can coexist
+        self.routes[key][f"{','.join(route.methods)} {route.path}"] = route_config
+
+    def has_path(self, path: str) -> bool:
+        for route_map in self.routes.values():
+            for route_config in route_map.values():
+                route = route_config.get("route")
+                if route is not None and getattr(route, "path", None) == path:
+                    return True
+        return False
 
     def add_routes(self, routes: Sequence[Union[Route, RouteGroup]]) -> None:
         for r in routes:
@@ -192,6 +188,19 @@ class Future:
                 self._add_route_group(r, parent_subdomain="", parent_middlewares=[], nesting_depth=0)
             else:
                 raise NotImplementedError
+        self._maybe_auto_openapi_routes()
+        rebuild_spec_from_routes(self.routes, self.config)
+
+    def _maybe_auto_openapi_routes(self) -> None:
+        openapi = get_openapi_config(self.config)
+        if not openapi.get("auto_routes") or not openapi.get("enabled", True):
+            return
+        if self.has_path(spec_path()):
+            return
+        subdomain = self.domain if not getattr(self, "domainless_mode", False) else ""
+        for route in openapi_routes(config=self.config):
+            route.compile_pattern()
+            self._add_route(route=route, subdomain=subdomain)
 
     def _add_route_group(
         self,
@@ -200,6 +209,7 @@ class Future:
         parent_prefix: str = "",
         parent_middlewares: Optional[list[Middleware]] = None,
         nesting_depth: int = 0,
+        parent_group_names: Optional[list[str]] = None,
     ) -> None:
         """Recursively add RouteGroup and its nested RouteGroups."""
         # Validate RouteGroup configuration
@@ -222,13 +232,29 @@ class Future:
         # Build the full prefix path for this group with validation
         full_prefix = self._build_prefix_path(parent_prefix, route_group.prefix)
 
+        group_names = list(parent_group_names or [])
+        if route_group.name:
+            group_names.append(route_group.name)
+        group_meta = {
+            "name": " › ".join(group_names) if group_names else "",
+            "prefix": full_prefix,
+            "subdomain": full_subdomain,
+        }
+
+        # Outer group middleware + this group's (nested groups inherit the full chain)
+        accumulated_middlewares = list(parent_middlewares or []) + list(route_group.middlewares)
+
         # Process all routes in this group
         for r in route_group.routes:
             if isinstance(r, RouteGroup):
                 # Nested RouteGroup - recurse with updated parent subdomain and prefix
-                # Pass parent middlewares as a separate parameter to maintain hierarchy
                 self._add_route_group(
-                    r, parent_subdomain=full_subdomain, parent_prefix=full_prefix, parent_middlewares=route_group.middlewares, nesting_depth=nesting_depth + 1
+                    r,
+                    parent_subdomain=full_subdomain,
+                    parent_prefix=full_prefix,
+                    parent_middlewares=accumulated_middlewares,
+                    nesting_depth=nesting_depth + 1,
+                    parent_group_names=group_names,
                 )
             else:
                 # Regular Route - add with full subdomain path and accumulated prefix
@@ -241,11 +267,7 @@ class Future:
                 else:
                     full_domain = f"{full_subdomain}.{self.domain}" if full_subdomain else self.domain
 
-                # Check for route conflicts before adding
-                self._check_route_conflicts(r, full_domain)
-
-                # Pass parent middlewares to maintain hierarchy
-                self._add_route(route=r, subdomain=full_domain, parent_middlewares=route_group.middlewares)
+                self._add_route(route=r, subdomain=full_domain, parent_middlewares=accumulated_middlewares, group=group_meta)
 
     def _validate_route_group(self, route_group: RouteGroup) -> None:
         """Validate RouteGroup configuration."""
@@ -278,35 +300,45 @@ class Future:
         return full_prefix
 
     def _check_route_conflicts(self, route: Route, domain: str) -> None:
-        """Check for route conflicts within the same domain."""
+        """Conflict only when the same path shares an HTTP method."""
         existing_routes = self.routes.get(domain, {})
-        if route.path in existing_routes:
-            raise ValueError(f"Route conflict detected: {route.path} already exists in domain {domain}")
+        for existing in existing_routes.values():
+            other = existing.get("route")
+            if other is None or getattr(other, "path", None) != route.path:
+                continue
+            overlap = set(other.methods) & set(route.methods)
+            if overlap:
+                raise ValueError(f"Route conflict detected: {','.join(sorted(overlap))} {route.path} already exists in domain {domain}")
 
     def _validate_domain_access(self, host_domain: str) -> bool:
         """Validate if the host domain is allowed to access routes."""
-        log.debug(f"Validating domain access for host: '{host_domain}' against configured domain: '{self.domain}'")
-        
+        compare_host = host_domain
+        debug = bool(self.config.get("APP_DEBUG")) if self.config else False
+        if debug and ":" in compare_host:
+            # APP_DEBUG only: Host: localhost:8000 → localhost (explicit Host without port in prod)
+            compare_host = compare_host.rsplit(":", 1)[0]
+        log.debug(f"Validating domain access for host: '{host_domain}' (compare='{compare_host}') against configured domain: '{self.domain}'")
+
         # Optimization: Check cache first
-        if host_domain in self._domain_cache:
-            return self._domain_cache[host_domain]
-        
+        if compare_host in self._domain_cache:
+            return self._domain_cache[compare_host]
+
         # Check if domain matches our configured domain or any subdomain
         if not self.domain:
-            self._domain_cache[host_domain] = True
+            self._domain_cache[compare_host] = True
             return True  # No domain restriction
 
         # Allow exact domain match
-        if host_domain == self.domain:
-            self._domain_cache[host_domain] = True
+        if compare_host == self.domain:
+            self._domain_cache[compare_host] = True
             return True
 
         # Allow subdomains of our domain
-        if host_domain.endswith(f".{self.domain}"):
-            self._domain_cache[host_domain] = True
+        if compare_host.endswith(f".{self.domain}"):
+            self._domain_cache[compare_host] = True
             return True
 
-        self._domain_cache[host_domain] = False
+        self._domain_cache[compare_host] = False
         return False
 
     def get_performance_stats(self) -> dict[str, Any]:
@@ -333,7 +365,7 @@ class Future:
             self.lifespan.app = app
             async with self.lifespan as state:
                 if state is not None:
-                    scope["state"].update(state)
+                    scope.setdefault("state", {}).update(state)
                 await send({"type": AsgiEventType.LIFESPAN_STARTUP_COMPLETE})
                 started = True
                 message = await receive()
@@ -348,102 +380,97 @@ class Future:
 
 
     async def handle_http_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
-        # Grab the request object
         request = Request(scope, receive)
+        response = Response()
+        try:
+            host_domain = request.host.split("/")[0] if "/" in request.host else request.host
+            if not self._validate_domain_access(host_domain):
+                raise HTTPException("Forbidden", 403)
 
-        def apply_session_cookie(response: Response) -> None:
-            # Response stores headers as: [[b"name", b"value"], ...]
-            if not hasattr(response, "headers"):
-                return
+            debug = bool(self.config.get("APP_DEBUG")) if self.config else False
+            route_host = host_domain.rsplit(":", 1)[0] if debug and ":" in host_domain else host_domain
+            key = "" if getattr(self, "domainless_mode", False) else route_host
+            domain_routes = self.routes.get(key, {})
 
-            # Only emit a cookie if the controller has something in request.session.
-            if request.session:
-                payload = json.dumps(
-                    request.session,
-                    default=str,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                ).encode("utf-8")
-                value = base64.urlsafe_b64encode(payload).decode("ascii")
+            matched_route = None
+            route_params = None
+            allowed_methods: list[str] = []
 
-                # Remove existing Set-Cookie headers (if any).
-                response.headers = [
-                    pair
-                    for pair in response.headers
-                    if pair[0].decode("utf-8", errors="ignore").lower() != "set-cookie"
-                ]
+            for route_path, route_config in domain_routes.items():
+                route = route_config.get("route", None)
+                if route and hasattr(route, "match"):
+                    if getattr(route, "_rx", None) is not None and route._rx.match(request.path.encode()):
+                        allowed_methods.extend(route.methods)
+                    route_match = route.match(request.method, request.path.encode())
+                    if route_match:
+                        matched_route = route_config
+                        route_params = route_match.params
+                        break
+                else:
+                    cfg_path = route_path.split(" ", 1)[-1] if " " in str(route_path) else route_path
+                    if cfg_path == request.path:
+                        matched_route = route_config
+                        break
+            if not matched_route:
+                if allowed_methods:
+                    if request.method == "OPTIONS":
+                        for route_path, route_config in domain_routes.items():
+                            route = route_config.get("route", None)
+                            if not route or getattr(route, "_rx", None) is None or not route._rx.match(request.path.encode()):
+                                continue
+                            middleware_classes = route_config.get("middleware", {}).get("classes") or []
+                            if any(getattr(middleware, "__name__", "") == "CORSMiddleware" for middleware in middleware_classes):
+                                matched_route = route_config
+                                break
+                    if not matched_route:
+                        raise HTTPException("Method Not Allowed", 405, headers={"allow": ", ".join(sorted(set(allowed_methods)))})
+                if not matched_route:
+                    raise HTTPException("Not Found", 404)
 
-                cookie = (
-                    f"{SESSION_COOKIE_NAME}={value}; "
-                    f"Path={SESSION_COOKIE_PATH}; "
-                    + ("HttpOnly; " if SESSION_COOKIE_HTTPONLY else "")
-                    + f"SameSite={SESSION_COOKIE_SAMESITE}"
-                    + ("; Secure" if request.scheme == "https" else "")
-                )
-                response.headers.append([b"set-cookie", cookie.encode("utf-8")])
-                return
-        #request_method = request.method
-        #request_path = request.path.encode()
-        
-        # Check host header for domain validation
-        host_domain = request.host.split("/")[0] if "/" in request.host else request.host
-        if not self._validate_domain_access(host_domain):
-            response = Response(body="Forbidden", status=403)
-            apply_session_cookie(response)
-            await response(send)
-            return
-        
-        # In domainless mode, always use the empty string key for lookup
-        key = "" if getattr(self, "domainless_mode", False) else host_domain
-        domain_routes = self.routes.get(key, {})
-        
-        matched_route = None
-        route_params = None
-        
-        for route_path, route_config in domain_routes.items():
-            route = route_config.get("route", None)
-            if route and hasattr(route, "match"):
-                route_match = route.match(request.method, request.path.encode())
-                if route_match:
-                    matched_route = route_config
-                    route_params = route_match.params
-                    break
-            else:
-                if route_path == request.path:
-                    matched_route = route_config
-                    break
-        if not matched_route:
-            response = Response(body="Not Found", status=404)
-            apply_session_cookie(response)
-            await response(send)
-            return
-        handler = matched_route["handler"]
-        middleware_levels = matched_route["middleware"]["levels"]
-        for level in middleware_levels:
-            for m in level["before"]:
-                response = await m.intercept(request)  # type: ignore[reportUnknownMemberType]
-                if response is not None:
-                    apply_session_cookie(response)
-                    await response(send)
+            request.route = matched_route.get("route")
+            middleware_classes = matched_route["middleware"].get("classes") or []
+            middleware_instances = [m(request, response) for m in middleware_classes]
+            for mw in middleware_instances:
+                early = await mw.before()
+                if early is not None:
+                    await early(send)
                     return
-        if route_params:
-            response = await handler(request, **route_params)
-        else:
-            response = await handler(request)
-        for level in reversed(middleware_levels):
-            for m in level["after"]:
-                modified_response = await m.intercept(request, response)  # type: ignore[reportUnknownMemberType]
-                if modified_response is not None:
-                    response = modified_response
-        apply_session_cookie(response)
-        await response(send)
+
+            controller_cls = matched_route.get("controller")
+            action = matched_route.get("action")
+            if controller_cls and action:
+                ctrl = controller_cls(request, response)
+                method = getattr(ctrl, action)
+                if route_params:
+                    result = await method(**route_params)
+                else:
+                    result = await method()
+            else:
+                handler = matched_route["handler"]
+                if route_params:
+                    result = await handler(request, response, **route_params)
+                else:
+                    result = await handler(request, response)
+            if result is not None:
+                if not isinstance(result, Response):
+                    raise TypeError(f"Controller must return a Response or None, got {type(result).__name__}")
+                response = result
+
+            for mw in reversed(middleware_instances):
+                modified = await mw.after()
+                if modified is not None:
+                    response = modified
+            await response(send)
+        except Exception as exc:
+            if not isinstance(exc, HTTPException):
+                log.exception("Unhandled exception while processing %s %s", request.method, request.path)
+            await ErrorHandler(request, response).handle(exc)(send)
 
     async def handle_websocket_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
         """Handle WebSocket requests following the same pattern as HTTP requests."""
         request_path = scope["path"].encode()
         host_domain = ""
 
-        # Extract host from headers
         headers = dict(scope.get("headers", []))
         host_header = headers.get(b"host", b"").decode()
         if host_header:
@@ -453,8 +480,9 @@ class Future:
             await send({"type": "websocket.close", "code": 1008, "reason": "Forbidden"})
             return
 
-        # In domainless mode, always use the empty string key for lookup
-        key = "" if getattr(self, "domainless_mode", False) else host_domain
+        debug = bool(self.config.get("APP_DEBUG")) if self.config else False
+        route_host = host_domain.rsplit(":", 1)[0] if debug and ":" in host_domain else host_domain
+        key = "" if getattr(self, "domainless_mode", False) else route_host
         domain_routes = self.routes.get(key, {})
         matched_route = None
         route_params = None
@@ -462,13 +490,14 @@ class Future:
         for route_path, route_config in domain_routes.items():
             route = route_config.get("route")
             if route and hasattr(route, "match"):
-                route_match = route.match(request_path)
+                route_match = route.match("WEBSOCKET", request_path)
                 if route_match:
                     matched_route = route_config
                     route_params = route_match.params
                     break
             else:
-                if route_path == scope["path"]:
+                cfg_path = route_path.split(" ", 1)[-1] if " " in str(route_path) else route_path
+                if cfg_path == scope["path"]:
                     matched_route = route_config
                     break
 
@@ -476,49 +505,62 @@ class Future:
             await send({"type": "websocket.close", "code": 1008, "reason": "Not Found"})
             return
 
-        handler = matched_route["handler"]
-        middleware_levels = matched_route["middleware"]["levels"]
-
-        # Create a mock request for middleware compatibility
         request = Request(scope, receive)
-
-        # Run request middleware
-        for level in middleware_levels:
-            for m in level["before"]:
-                response = await m.intercept(request)  # type: ignore[reportUnknownMemberType]
-                if response is not None:
-                    # Middleware decided to close the connection
+        response = Response()
+        request.route = matched_route.get("route")
+        try:
+            middleware_classes = matched_route["middleware"].get("classes") or []
+            middleware_instances = [m(request, response) for m in middleware_classes]
+            for mw in middleware_instances:
+                early = await mw.before()
+                if early is not None:
                     await send({"type": "websocket.close", "code": 1008, "reason": "Middleware rejected"})
                     return
 
-        # Call the WebSocket handler to get the response
-        if route_params:
-            response = await handler(request, **route_params)
-        else:
-            response = await handler(request)
+            controller_cls = matched_route.get("controller")
+            action = matched_route.get("action")
+            if controller_cls and action:
+                ctrl = controller_cls(request, response)
+                method = getattr(ctrl, action)
+                if route_params:
+                    result = await method(**route_params)
+                else:
+                    result = await method()
+            else:
+                handler = matched_route["handler"]
+                if route_params:
+                    result = await handler(request, response, **route_params)
+                else:
+                    result = await handler(request, response)
+            if result is not None:
+                if not isinstance(result, (Response, WebSocketResponse)):
+                    raise TypeError(f"Controller must return a Response, WebSocketResponse, or None, got {type(result).__name__}")
+                response = result
 
-        # Run after middleware (same as HTTP)
-        for level in reversed(middleware_levels):
-            for m in level["after"]:
-                modified_response = await m.intercept(request, response)  # type: ignore[reportUnknownMemberType]
-                if modified_response is not None:
-                    response = modified_response
+            for mw in reversed(middleware_instances):
+                modified = await mw.after()
+                if modified is not None:
+                    response = modified
 
-        # Send the WebSocket response (same pattern as HTTP)
-        await response(send)
+            await response(send)
+        except Exception:
+            log.exception("Unhandled exception while processing websocket %s", scope.get("path", ""))
+            await send({"type": "websocket.close", "code": 1011, "reason": "Internal Server Error"})
 
     async def __call__(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
         # Inject ourselves into the chain for later convenience
         scope["app"] = self
 
         # Check scope type and handle accordingly...
-        log.debug(f"Received scope type: '{scope['type']}' request for path: {scope.get('path', '')}")
         if scope["type"] == "lifespan":
+            log.debug("Received scope type: 'lifespan'")
             log.debug("Handling lifespan stuff...")
             await self.handle_lifespan_request(scope, receive, send)
         elif scope["type"] == "http":
+            log.debug("Received scope type: 'http' request for path: %s", scope.get("path", ""))
             await self.handle_http_request(scope, receive, send)
         elif scope["type"] == "websocket":
+            log.debug("Received scope type: 'websocket' request for path: %s", scope.get("path", ""))
             await self.handle_websocket_request(scope, receive, send)
         else:
             raise NotImplementedError
@@ -562,9 +604,9 @@ class Future:
         right = Table.grid(padding=(0, 1))
         right.add_column(justify="left", no_wrap=True)
         right.add_column(justify="left")
-        right.add_row("[red]app:[/]", f"{ self.config['APP_NAME'] }")  # APP_NAME  # TODO: add APP_DOMAIN
+        right.add_row("[red]app:[/]", f"{ self.config.get('APP_NAME', 'Future') }")
         right.add_row("[red]mode:[/]", f"{ "debug" if debug else "prod"} / { workers } worker(s)")  # FIXME
-        right.add_row("[red]domain:[/]", f"{ self.config["APP_DOMAIN"] if self.config else "N/A" }")  # FIXME
+        right.add_row("[red]domain:[/]", f"{ self.config.get("APP_DOMAIN", "N/A") if self.config else "N/A" }")
         right.add_row("[red]server:[/]", "future, HTTP/1.1")
         right.add_row("[red]python:[/]", f"{ python_version }")
         right.add_row("[red]platform:[/]", f"{ platform_str }")
@@ -582,12 +624,17 @@ class Future:
         # console.print(title_panel)
         console.print(main_panel)
 
+        # uvicorn needs an import string for reload / multiple workers; Future projects use run:app.
+        asgi_app: Any = self
+        reload = bool(debug)
+        if reload or workers > 1:
+            asgi_app = (self.config or {}).get("APP_ASGI", "run:app")
         uvicorn.run(
-            app="__main__:app",  # "app.main.app"
+            app=asgi_app,
             host=host,
             port=port,
             workers=workers,
-            reload=debug,
+            reload=reload,
             ssl_keyfile=tls_key,
             ssl_certfile=tls_cert,
             ssl_keyfile_password=tls_password,

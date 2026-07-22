@@ -3,36 +3,61 @@ site_description: A minimalist, decorator-free ASGI web framework for Python
 site_author: Future Framework Team
 
 repo_name: future
-repo_url: https://github.com/Defendinary/future
+repo_url: https://github.com/nicolaipre/future
 edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
 
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Usage Guide: usage.md
-  - Quick Reference: quick-reference.md
+  - Quick start: quick-start.md
+  - Getting started: getting-started.md
+  - HTTP:
+    - Request, Response, Middleware: http.md
+    - Routing: routing.md
+  - Database: database.md
+  - OpenAPI: openapi.md
+  - Lifespan and tasks: lifespan-tasks.md
+  - CLI: cli.md
+  - Quick reference: quick-reference.md
   - Examples: examples.md
+  - Gaps and roadmap: gaps.md
 
 plugins:
   - search
 
 markdown_extensions:
   - admonition
-  - codehilite
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
   - toc:
       permalink: true
+  - tables
 
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/Defendinary/future
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/future-api/
-
-extra_css:
-  - stylesheets/extra.css
-
-extra_javascript:
-  - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js 
+      link: https://github.com/nicolaipre/future
