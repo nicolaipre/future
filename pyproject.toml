@@ -10,7 +10,7 @@ readme = "README.md"
 python = "^3.12"
 uvicorn = "^0.32.1"
 httpx = "^0.28.0"
-uvloop = {version = "^0.21.0", markers = "sys_platform == 'linux' or sys_platform == 'darwin'"}
+uvloop = {version = "^0.22.1", markers = "sys_platform == 'linux' or sys_platform == 'darwin'"}
 rich = "^13.7.1"
 httpie = "^3.2.2"
 elasticsearch = "^8.15.1"
