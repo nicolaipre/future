@@ -1,4 +1,6 @@
 import platform
+import base64
+import json
 import sys
 import traceback
 
@@ -20,6 +22,11 @@ from future.requests import Request
 from future.responses import Response
 from future.routing import Route, RouteGroup
 from future.types import AsgiEventType, ASGIReceive, ASGIScope, ASGISend, RouteConfig
+
+SESSION_COOKIE_NAME = "session"
+SESSION_COOKIE_PATH = "/"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
 
 
 """
@@ -343,6 +350,38 @@ class Future:
     async def handle_http_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:
         # Grab the request object
         request = Request(scope, receive)
+
+        def apply_session_cookie(response: Response) -> None:
+            # Response stores headers as: [[b"name", b"value"], ...]
+            if not hasattr(response, "headers"):
+                return
+
+            # Only emit a cookie if the controller has something in request.session.
+            if request.session:
+                payload = json.dumps(
+                    request.session,
+                    default=str,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                value = base64.urlsafe_b64encode(payload).decode("ascii")
+
+                # Remove existing Set-Cookie headers (if any).
+                response.headers = [
+                    pair
+                    for pair in response.headers
+                    if pair[0].decode("utf-8", errors="ignore").lower() != "set-cookie"
+                ]
+
+                cookie = (
+                    f"{SESSION_COOKIE_NAME}={value}; "
+                    f"Path={SESSION_COOKIE_PATH}; "
+                    + ("HttpOnly; " if SESSION_COOKIE_HTTPONLY else "")
+                    + f"SameSite={SESSION_COOKIE_SAMESITE}"
+                    + ("; Secure" if request.scheme == "https" else "")
+                )
+                response.headers.append([b"set-cookie", cookie.encode("utf-8")])
+                return
         #request_method = request.method
         #request_path = request.path.encode()
         
@@ -350,6 +389,7 @@ class Future:
         host_domain = request.host.split("/")[0] if "/" in request.host else request.host
         if not self._validate_domain_access(host_domain):
             response = Response(body="Forbidden", status=403)
+            apply_session_cookie(response)
             await response(send)
             return
         
@@ -374,6 +414,7 @@ class Future:
                     break
         if not matched_route:
             response = Response(body="Not Found", status=404)
+            apply_session_cookie(response)
             await response(send)
             return
         handler = matched_route["handler"]
@@ -382,6 +423,7 @@ class Future:
             for m in level["before"]:
                 response = await m.intercept(request)  # type: ignore[reportUnknownMemberType]
                 if response is not None:
+                    apply_session_cookie(response)
                     await response(send)
                     return
         if route_params:
@@ -393,6 +435,7 @@ class Future:
                 modified_response = await m.intercept(request, response)  # type: ignore[reportUnknownMemberType]
                 if modified_response is not None:
                     response = modified_response
+        apply_session_cookie(response)
         await response(send)
 
     async def handle_websocket_request(self, scope: ASGIScope, receive: ASGIReceive, send: ASGISend) -> None:

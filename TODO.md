@@ -1,6 +1,17 @@
 # TODO
 
 
+FIKS DETTE: Controllere skal ha en __init__ slik som Masonite:
+    def __init__(self, request: Request, response: Response):
+        """LeakController Initializer
+
+        Arguments:
+            request {masonite.request.Request} -- The Masonite Request class.
+        """
+        self.request = request
+        self.response = response
+
+
 ## FIXME
 - [ ] Automatic mapping for GET params work. Make it work for POST too.
     - [ ] Inject into scope.context ? or something else?
