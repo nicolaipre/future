@@ -11,11 +11,45 @@ class OpenAPIController(Controller):
 
     async def openapi(self) -> Response:
         """Serve the OpenAPI schema as JSON."""
-        return self.response.json(get_spec(), status=200)
+        spec = dict(get_spec())
+        scheme = self.request.scheme
+        host = self.request.host
+        port = f":{host.rsplit(':', 1)[1]}" if ":" in host else ""
+        paths = {}
+        for path, entry in (spec.get("paths") or {}).items():
+            item = dict(entry)
+            hosts = item.pop("x-future-hosts", None) or []
+            sub = item.pop("x-future-subdomain", None) or ""
+            if hosts:
+                item["servers"] = [{"url": f"{scheme}://{h}{port}", "description": sub or h} for h in hosts]
+            paths[path] = item
+        spec["paths"] = paths
+        # Scalar Test Request needs document-level servers or the URL bar is blank. List RouteGroup
+        # hosts first (other hosts before the docs Host) so subdomain APIs are the default selection.
+        if "servers" not in spec:
+            servers = []
+            seen = set()
+            for item in paths.values():
+                for server in item.get("servers") or []:
+                    url = server.get("url")
+                    if not url or url in seen:
+                        continue
+                    seen.add(url)
+                    servers.append(dict(server))
+            current = f"{scheme}://{host}"
+            if current not in seen:
+                servers.append({"url": current, "description": "Application"})
+            if not servers:
+                servers = [{"url": current, "description": "Application"}]
+            docs_host = host.rsplit(":", 1)[0] if ":" in host else host
+            other = [s for s in servers if s["url"].split("://", 1)[-1].split("/")[0].rsplit(":", 1)[0] != docs_host]
+            same = [s for s in servers if s["url"].split("://", 1)[-1].split("/")[0].rsplit(":", 1)[0] == docs_host]
+            spec["servers"] = other + same
+        return self.response.json(spec, status=200)
 
     async def redoc(self) -> Response:
         """Serve ReDoc HTML (OSS) or Redocly Reference Docs when license_key is set."""
-        spec = f"{self.request.scheme}://{self.request.host}{path_prefix()}/openapi.json"
+        spec = f"{path_prefix()}/openapi.json"
         license_key = (get_openapi_config().get("redocly_license_key") or "").strip()
         if license_key:
             # Paid Redocly Reference Docs (includes Try it). Requires a valid license.
@@ -77,7 +111,7 @@ class OpenAPIController(Controller):
 
     async def swagger(self) -> Response:
         """Serve Swagger UI HTML."""
-        base = f"{self.request.scheme}://{self.request.host}{path_prefix()}"
+        base = path_prefix()
         html = dedent(
             f"""
             <!DOCTYPE html>
@@ -128,7 +162,15 @@ class OpenAPIController(Controller):
 
     async def scalar(self) -> Response:
         """Serve Scalar API reference HTML."""
-        spec = f"{self.request.scheme}://{self.request.host}{path_prefix()}/openapi.json"
+        spec = f"{path_prefix()}/openapi.json"
+        scheme = self.request.scheme
+        host = self.request.host
+        port = f":{host.rsplit(':', 1)[1]}" if ":" in host else ""
+        path_servers = {}
+        for path, entry in (get_spec().get("paths") or {}).items():
+            hosts = entry.get("x-future-hosts") or []
+            if hosts:
+                path_servers[path] = f"{scheme}://{hosts[0]}{port}"
         html = dedent(
             f"""
             <!DOCTYPE html>
@@ -139,8 +181,21 @@ class OpenAPIController(Controller):
                 <meta name="viewport" content="width=device-width, initial-scale=1">
             </head>
             <body>
-                <script id="api-reference" data-url="{spec}"></script>
+                <div id="app"></div>
                 <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+                <script>
+                    const pathServers = {json.dumps(path_servers)};
+                    Scalar.createApiReference("#app", {{
+                        url: {json.dumps(spec)},
+                        // Scalar's modal uses the global server; force RouteGroup host for send + URL bar.
+                        onBeforeRequest: ({{ requestBuilder }}) => {{
+                            const base = pathServers[requestBuilder.path.raw];
+                            if (base) {{
+                                requestBuilder.baseUrl = base;
+                            }}
+                        }},
+                    }});
+                </script>
             </body>
             </html>
             """
@@ -149,7 +204,7 @@ class OpenAPIController(Controller):
 
     async def rapidoc(self) -> Response:
         """Serve RapiDoc HTML."""
-        spec = f"{self.request.scheme}://{self.request.host}{path_prefix()}/openapi.json"
+        spec = f"{path_prefix()}/openapi.json"
         html = dedent(
             f"""
             <!DOCTYPE html>

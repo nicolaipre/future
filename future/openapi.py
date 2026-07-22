@@ -26,7 +26,7 @@ _CONFIG = {
     "auto_routes": False,
     "path_prefix": "",
     "redocly_license_key": "",  # paid Redocly Reference Docs (Try it); empty = OSS ReDoc
-    "servers": None,  # list of {"url": "...", "description": "..."} or None → derive from APP_DOMAIN
+    "servers": None,  # list of {"url": "...", "description": "..."} or None → filled at serve time from request + RouteGroup hosts
     "security_schemes": None,  # OpenAPI components.securitySchemes map
     "security": None,  # global security requirements
     "models": [],  # model classes → components.schemas via Model.openapi_schema()
@@ -87,7 +87,7 @@ def rebuild_spec_from_routes(routes_by_domain, app_config=None):
     for model in cfg.get("models") or []:
         schemas[model.__name__] = model().openapi_schema()
     if cfg.get("enabled", True):
-        for route_map in routes_by_domain.values():
+        for domain_key, route_map in routes_by_domain.items():
             for route_key, route_config in route_map.items():
                 route = route_config.get("route")
                 path = getattr(route, "path", None) or (route_key.split(" ", 1)[-1] if " " in str(route_key) else route_key)
@@ -140,6 +140,14 @@ def rebuild_spec_from_routes(routes_by_domain, app_config=None):
                 path = re.sub(r"/\{(?:[^:}]+:)?([^}]+)\}", r"/{\1}", path)
                 path = re.sub(r"/:([A-Za-z_][A-Za-z0-9_]*)", r"/{\1}", path)
                 entry = paths.setdefault(path, {})
+                # Host for this RouteGroup (e.g. api.example.com); scheme applied when serving /openapi.json.
+                if domain_key:
+                    hosts = entry.setdefault("x-future-hosts", [])
+                    if domain_key not in hosts:
+                        hosts.append(domain_key)
+                    sub = (route_config.get("group") or {}).get("subdomain") or ""
+                    if sub:
+                        entry["x-future-subdomain"] = sub
                 for method in route_config.get("methods") or ["GET"]:
                     operation = {
                         "operationId": operation_id,
@@ -172,12 +180,8 @@ def rebuild_spec_from_routes(routes_by_domain, app_config=None):
                             },
                         }
                     entry[method.lower()] = operation
+    # Explicit OPENAPI.servers only at rebuild; default servers use request.scheme + registered hosts when serving.
     servers = cfg.get("servers")
-    if servers is None and app_config:
-        domain = app_config.get("APP_DOMAIN") or ""
-        scheme = "https"
-        if domain:
-            servers = [{"url": f"{scheme}://{domain}", "description": "Application"}]
     components = {}
     security_schemes = cfg.get("security_schemes")
     if security_schemes:
