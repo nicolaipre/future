@@ -412,15 +412,34 @@ def register_database_connections() -> None:
 
 def run_migrations(rollback: bool = False) -> None:
     from future.migrations.Migrator import Migrator
+    from rich.console import Console
+    from rich.text import Text
 
     register_database_connections()
     migrator = Migrator(path="database/migrations")
+    console = Console()
     if rollback:
         rolled = migrator.rollback()
-        print(f"Rolled back: {rolled}")
+        if not rolled:
+            console.print(Text("✓ Nothing to rollback.", style="green"))
+            return
+        for name in rolled:
+            line = Text()
+            line.append("✓ ", style="green")
+            line.append("Rolled back ", style="green")
+            line.append(name, style="blue")
+            console.print(line)
         return
     ran = migrator.run()
-    print(f"Migrated: {ran}")
+    if not ran:
+        console.print(Text("✓ Nothing to migrate.", style="green"))
+        return
+    for name in ran:
+        line = Text()
+        line.append("✓ ", style="green")
+        line.append("Migrated ", style="green")
+        line.append(name, style="blue")
+        console.print(line)
 
 
 def run_seeds(seeder: str | None = None) -> None:
@@ -433,8 +452,11 @@ def run_seeds(seeder: str | None = None) -> None:
 
 def make_migration(model_name: str | None = None) -> None:
     from future.migrations.MigrationGenerator import MigrationGenerator
+    from rich.console import Console
+    from rich.text import Text
 
     ensure_project_path()
+    console = Console()
     try:
         paths = MigrationGenerator().make(model_name)
     except (FileNotFoundError, ValueError) as error:
@@ -444,7 +466,11 @@ def make_migration(model_name: str | None = None) -> None:
         print("No migrations created (no annotated models found).")
         return
     for path in paths:
-        print(f"Created: {path}")
+        line = Text()
+        line.append("✓ ", style="green")
+        line.append("Migration created successfully! ", style="green")
+        line.append(str(path), style="blue")
+        console.print(line)
 
 
 def make_seed(model_name: str | None = None) -> None:

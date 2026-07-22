@@ -18,7 +18,7 @@ from rich.text import Text
 from future.exceptions import ErrorHandler, HTTPException
 from future.logger import log
 from future.middleware import Middleware
-from future.openapi import get_openapi_config, openapi_routes, rebuild_spec_from_routes, set_openapi_config, spec_path
+from future.openapi import get_openapi_config, is_docs_path, openapi_routes, rebuild_spec_from_routes, set_openapi_config, spec_path
 from future.request import Request
 from future.response import Response, WebSocketResponse
 from future.routing import Route, RouteGroup
@@ -198,7 +198,11 @@ class Future:
         if self.has_path(spec_path()):
             return
         subdomain = self.domain if not getattr(self, "domainless_mode", False) else ""
+        prefix = openapi.get("path_prefix") or ""
         for route in openapi_routes(config=self.config):
+            if prefix:
+                joined = prefix if (not route.path or route.path == "/") else f"{prefix.rstrip('/')}{route.path}"
+                route = Route(methods=list(route.methods), path=joined, endpoint=route.endpoint, name=route.name, strict_slashes=route.strict_slashes, middlewares=list(route.middlewares), scopes=list(route.scopes))
             route.compile_pattern()
             self._add_route(route=route, subdomain=subdomain)
 
@@ -257,9 +261,16 @@ class Future:
                     parent_group_names=group_names,
                 )
             else:
-                # Regular Route - add with full subdomain path and accumulated prefix
-                r.path = f"{full_prefix}{r.path}"  # Convert route.path to full path (accumulated prefix AND route.path)
-                r.compile_pattern()
+                # Copy before prefixing — never mutate caller Route objects (reload would stack /api → /api/api).
+                # prefix="/indexes" + path="/" must be "/indexes", not "/indexes/" (that broke matching as ^/indexes//?$).
+                if not r.path or r.path == "/":
+                    joined = full_prefix or "/"
+                else:
+                    joined = f"{full_prefix.rstrip('/')}{r.path}" if full_prefix else r.path
+                prefixed = Route(methods=list(r.methods), path=joined, endpoint=r.endpoint, name=r.name, strict_slashes=r.strict_slashes, middlewares=list(r.middlewares), scopes=list(r.scopes))
+                prefixed.compile_pattern()
+                if is_docs_path(r.path) or is_docs_path(prefixed.path):
+                    set_openapi_config({"OPENAPI": {"path_prefix": full_prefix}})
 
                 # Build full domain path for dictionary lookup
                 if getattr(self, "domainless_mode", False):
@@ -267,7 +278,7 @@ class Future:
                 else:
                     full_domain = f"{full_subdomain}.{self.domain}" if full_subdomain else self.domain
 
-                self._add_route(route=r, subdomain=full_domain, parent_middlewares=accumulated_middlewares, group=group_meta)
+                self._add_route(route=prefixed, subdomain=full_domain, parent_middlewares=accumulated_middlewares, group=group_meta)
 
     def _validate_route_group(self, route_group: RouteGroup) -> None:
         """Validate RouteGroup configuration."""

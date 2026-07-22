@@ -128,6 +128,7 @@ class Route:
             pattern = pattern + b"/?"
 
         self._rx = re.compile(b"^" + pattern + b"$", re.IGNORECASE)
+
         self.param_names = param_names
 
     def match(self, request_method: str, request_path: bytes) -> Optional[RouteMatch]:

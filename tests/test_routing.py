@@ -197,3 +197,31 @@ async def test_domain_routing() -> None:
         response = await client.get("http://127.0.0.1/", headers={"Host": "example.com"})
         assert response.status_code == 200
         assert response.text == "✨ Welcome to Future! ✨"
+
+
+async def test_route_group_prefix_with_root_path() -> None:
+    """prefix=/indexes + Get('/') must match /indexes and /indexes/, not only /indexes/."""
+    routes = [
+        RouteGroup(
+            name="Indexes",
+            prefix="/indexes",
+            routes=[
+                Get("/", WelcomeController.root, "indexes"),  # type: ignore[reportAttributeAccessIssue]
+                Get("/<str:index_id>", WelcomeController.root, "indexes.show"),  # type: ignore[reportAttributeAccessIssue]
+            ],
+        ),
+    ]
+    config = {"APP_NAME": "test", "APP_DOMAIN": "example.com", "APP_DEBUG": False}
+    app = Future(lifespan=Lifespan(), config=config)
+    app.add_routes(routes=routes)
+
+    index_routes = [cfg["route"] for cfg in app.routes["example.com"].values() if cfg["route"].name == "indexes"]
+    assert len(index_routes) == 1
+    assert index_routes[0].path == "/indexes"
+    assert index_routes[0]._rx.pattern == b"^/indexes/?$"
+
+    async with FutureTestClient(app) as client:
+        for path in ("/indexes", "/indexes/"):
+            response = await client.get(f"http://127.0.0.1{path}", headers={"Host": "example.com"})
+            assert response.status_code == 200, path
+            assert response.text == "✨ Welcome to Future! ✨"
