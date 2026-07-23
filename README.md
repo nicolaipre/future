@@ -1,9 +1,9 @@
 # Future
-Minimal, decorator-free [ASGI](https://asgi.readthedocs.io/)-based framework for web APIs — routing, middleware, Active Record, migrations, seeds, OpenAPI, and interval tasks.
+[ASGI](https://asgi.readthedocs.io/)-based framework for web APIs — routing, middleware, Active Record, migrations, seeds, OpenAPI, and interval tasks.
 
 [![Build Status](https://github.com/nicolaipre/future-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaipre/future-framework/actions)
-[![Package version](https://img.shields.io/pypi/v/future-framework)](https://pypi.org/project/future-framework/)
-[![codecov](https://codecov.io/gh/nicolaipre/future-framework/branch/master/graph/badge.svg)](https://codecov.io/gh/nicolaipre/future-framework)
+[![Package Version](https://img.shields.io/pypi/v/future-framework)](https://pypi.org/project/future-framework/)
+[![Coverage](https://codecov.io/gh/nicolaipre/future-framework/branch/master/graph/badge.svg)](https://codecov.io/gh/nicolaipre/future-framework)
 
 ## Documentation
 Published at **[nicolaipre.github.io/future-framework](https://nicolaipre.github.io/future-framework/)**. To preview locally: `poetry install --with docs && poetry run mkdocs serve`.
