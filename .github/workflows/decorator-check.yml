@@ -36,8 +36,9 @@ jobs:
             echo "The following lines contain decorators:"
             echo "$decorator_lines"
             echo ""
-            echo "Please remove all decorators from your code. This project follows a minimalist approach"
-            echo "that emphasizes clarity and explicit code over decorator-based abstractions."
+            echo "Please remove all decorators from your code."
+            echo ""
+            echo "Have you ever wanted to extend your forehead so that it becomes a fivehead, or even a sixhead? No? Then why would you want that for your code by using decorators? Decorators is the ugliest programming construct known to man and you will never see it in this project."
             echo ""
             echo "Common decorators to avoid:"
             echo "- @dataclass"
@@ -59,17 +60,15 @@ jobs:
           cat << 'EOF'
           ## ❌ Decorators Prohibited
 
-          This project follows a minimalist approach that prohibits the use of decorators.
+          This project prohibits the use of decorators.
 
           **Found decorators in your code that must be removed:**
 
               Decorators found in Python files
 
           **Why no decorators?**
-          - This project emphasizes clarity and explicit code
-          - Decorators can hide complexity and make code harder to understand
-          - We prefer plain classes and explicit function calls
-          - Decorators are ugly as fuck and makes me want to poke my eyes out with scissors
+
+          Have you ever wanted to extend your forehead so that it becomes a fivehead, or even a sixhead? No? Then why would you want that for your code by using decorators? Decorators is the ugliest programming construct known to man and you will never see it in this project.
 
           **Common decorators to avoid:**
           - @dataclass → Use plain classes with explicit __init__
@@ -80,4 +79,4 @@ jobs:
           - Custom decorators → Use explicit function calls
 
           Please remove all decorators and resubmit your PR.
-          EOF 
+          EOF
