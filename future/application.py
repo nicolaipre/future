@@ -593,7 +593,7 @@ class Future:
         arch = platform.machine()
         platform_str = f"{platform_info}-{arch}"
         try:
-            future_version = version("future")
+            future_version = version("future-framework")
         except PackageNotFoundError:
             future_version = "not installed"
         except Exception:
