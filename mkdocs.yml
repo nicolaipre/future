@@ -1,10 +1,10 @@
 site_name: Future
 site_description: Minimal, decorator-free ASGI framework for Python
 site_author: Future
-site_url: https://nicolaipre.github.io/future/
+site_url: https://nicolaipre.github.io/future-framework/
 
-repo_name: nicolaipre/future
-repo_url: https://github.com/nicolaipre/future
+repo_name: nicolaipre/future-framework
+repo_url: https://github.com/nicolaipre/future-framework
 edit_uri: edit/master/docs/
 
 theme:

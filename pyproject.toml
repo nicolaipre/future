@@ -1,11 +1,17 @@
 [tool.poetry]
 name = "future-framework"
-version = "1.1.0"
+version = "1.1.1"
 description = "Next Gen. ASGI Framework for minimal Web APIs"
 authors = ["nicolaipre"]
 license = "LICENSE"
 readme = "README.md"
+homepage = "https://github.com/nicolaipre/future-framework"
+repository = "https://github.com/nicolaipre/future-framework"
+documentation = "https://nicolaipre.github.io/future-framework/"
 packages = [{ include = "future" }]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/nicolaipre/future-framework/issues"
 
 [tool.poetry.dependencies]
 python = "^3.12"

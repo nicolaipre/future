@@ -12,18 +12,9 @@ poetry add future-framework
 pip install future-framework
 ```
 
-From git (before / instead of PyPI):
-
-```bash
-poetry add git+https://github.com/nicolaipre/future.git@master
-```
-
 ```toml
-# pyproject.toml — PyPI
+# pyproject.toml
 future-framework = "^1.1.0"
-
-# or git
-future-framework = { git = "https://github.com/nicolaipre/future.git", rev = "master" }
 ```
 
 ```python
