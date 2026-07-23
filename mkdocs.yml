@@ -27,7 +27,8 @@ nav:
     - Routing: routing.md
     - Middleware: middleware.md
     - WebSockets: websockets.md
-    - Lifespan and tasks: lifespan-tasks.md
+    - Lifespan: lifespan.md
+    - Tasks: tasks.md
     - Configuration: configuration.md
     - Models: models.md
     - Database: database.md

@@ -16,7 +16,7 @@ Future is built so you can stand up backends for larger applications quickly, wi
 
 **HTTP and WebSockets** — Familiar request/response builders, middleware `before` / `after`, sessions and CORS when you opt in. WebSocket routes use the same grouping and controller pattern.
 
-**Lifespan and scheduled work** — Startup / shutdown hooks and fixed-interval tasks without a separate worker framework for simple jobs.
+**Lifespan and scheduled work** — ASGI [Lifespan](lifespan.md) holds startup / shutdown / cron [Tasks](tasks.md) without a separate worker framework for simple jobs.
 
 ## Design
 1. **No decorators** on framework or app code we control.
@@ -66,7 +66,8 @@ Published at [nicolaipre.github.io/future](https://nicolaipre.github.io/future/)
 | [Routing](routing.md) | `future.routing` |
 | [Middleware](middleware.md) | `future.middleware` |
 | [WebSockets](websockets.md) | `WebSocket` + `WebSocketResponse` |
-| [Lifespan and tasks](lifespan-tasks.md) | `future.lifespan` / `future.tasks` |
+| [Lifespan](lifespan.md) | `future.lifespan` — ASGI startup / cron / shutdown |
+| [Tasks](tasks.md) | `future.tasks` — `Task` / `Unit` |
 | [Configuration](configuration.md) | Settings, env, `DATABASES` |
 | [Models](models.md) | `future.models` — annotations; generate migrate/seed |
 | [Database](database.md) | Connections and drivers |
