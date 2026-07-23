@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.1.2] - 2026-07-23
+### Changed
+- Package and README description: “ASGI-based framework for web APIs”
+
+
 ## [1.1.1] - 2026-07-23
 ### Added
 - PyPI project links: homepage, repository, documentation, and bug tracker
