@@ -25,6 +25,11 @@ app = Future(lifespan=lifespan, config=config)
 
 CLI `migrate` / `seed` load `run.py` so registration matches runtime. Env loading (`.env` or Ansible YAML): [Configuration](configuration.md).
 
+
+## Per-model connection
+Models are not locked to one database. Set `__connection__` on the model to a key from `DATABASES` (or `"default"` for `DATABASES["default"]`). Migrations inherit that name; see [Models](models.md#connections).
+
+
 ## Run migrations and seeds
 Generate files **from model annotations** first (`future make:migration` / `make:seed`) — details in [Models](models.md). Then:
 

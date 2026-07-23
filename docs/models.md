@@ -22,6 +22,28 @@ class Stock(Model):
 
 Register connections in [Configuration](configuration.md) / [Database](database.md) before using the model at runtime or in CLI.
 
+
+## Connections
+`__connection__` selects which entry in `DATABASES` the model uses. Default is `"default"`, which resolves to the name in `DATABASES["default"]` (e.g. `"sqlite"`). Set it to any other registered key to put a model on a different store:
+
+```python
+from future.models import Model
+
+class Stock(Model):
+    __connection__ = "default"   # → DATABASES["default"] → e.g. sqlite
+
+class Trade(Model):
+    __connection__ = "mysql"     # → DATABASES["mysql"]
+
+class Event(Model):
+    __connection__ = "postgres"  # → DATABASES["postgres"]
+```
+
+`future make:migration` copies the model’s `__connection__` onto the migration class. `future migrate` / `rollback` apply each migration on that connection (migration history is tracked per connection). Seeders call the model’s own `save()` / queries, so they follow the model connection automatically.
+
+Register every named connection in `DATABASES` before use — see [Database](database.md).
+
+
 ## Annotations drive generators
 After annotations are set:
 
