@@ -1261,6 +1261,9 @@
 </table>
 <h2 id="database-orm">Database / ORM<a class="headerlink" href="#database-orm" title="Permanent link">&para;</a></h2>
 <p>MongoDB, ClickHouse, and Redis Active Record CRUD are usable (Redis has no schema/migrate). Remaining ORM gaps are driver-specific edge cases rather than stubs.</p>
+<ul>
+<li><strong><code>where(..., "like", ...)</code> naming</strong> — Pattern matching works on all drivers (<code>%</code> / <code>_</code>, mapped per backend), but the operator name is SQL-flavored. Later: review a more generic, cross-store name (e.g. <code>match</code> / <code>pattern</code> / <code>contains</code>-style) that stays understandable for SQL, Elasticsearch, MongoDB, etc., without breaking the agnostic Model API. Keep one portable pattern language; avoid driver-specific wording in app code.</li>
+</ul>
 <h2 id="middleware-stock-library">Middleware stock library<a class="headerlink" href="#middleware-stock-library" title="Permanent link">&para;</a></h2>
 <p>CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain unfinished and are <strong>not</strong> exported from <code>future.middleware</code>.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
@@ -1277,7 +1280,7 @@
 <li><strong><code>Future.run</code> stays on uvicorn.</strong> Hypercorn is <strong>not</strong> a drop-in for <code>uvicorn.run(...)</code> (different API: <code>Config</code> + <code>asyncio.run(serve(app, config))</code>, different workers/reload). An optional Hypercorn backend can be a later feature, not a silent swap.</li>
 </ul>
 <h2 id="graphql">GraphQL<a class="headerlink" href="#graphql" title="Permanent link">&para;</a></h2>
-<p>In-repo schema is a demo. <code>GraphQLController</code> runs a fixed query — not a general GraphQL HTTP endpoint. Docs must not claim <code>app.add_graphql_route</code>.</p>
+<p><code>GraphQLController.query</code> accepts <code>POST</code> with <code>{query, variables?, operationName?}</code>. Schema from <code>config["GRAPHQL_SCHEMA"]</code>, else the in-repo demo schema. Docs must not claim <code>app.add_graphql_route</code>.</p>
 <h2 id="plugins">Plugins<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h2>
 <p><code>Plugin</code> is a marker. Only <code>ElasticsearchPlugin</code> is substantial. No lifecycle hooks into <code>Future</code> boot.</p>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
