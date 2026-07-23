@@ -52,6 +52,14 @@ jobs:
       - name: Enforce coverage
         run: |
           poetry run coverage report --show-missing --skip-covered --fail-under=20
+          poetry run coverage xml
+
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
 
   build:
     name: "Build package"
