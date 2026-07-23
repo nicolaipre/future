@@ -36,7 +36,6 @@ twine = "^6.2.0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"
-mkdocs-material = "^9.7.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true

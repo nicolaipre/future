@@ -1,73 +1,68 @@
 # Routing
-## Route helpers
 ```python
-from future.routing import (
-    Get, Post, Put, Patch, Delete, Head, Options, WebSocket, RouteGroup,
-)
+from future.routing import Get, Post, Put, Patch, Delete, Head, Options, RouteGroup, WebSocket
 ```
 
-Each helper takes `path`, `endpoint`, `name`, and optional `middlewares` / `scopes`.
+Each helper takes `path`, `endpoint`, `name`:
 
 ```python
 Get("/health", HealthController.ping, "health")
-Post("/webhook", WebhookController.dump, "webhook")
+Post("/search", SearchController.search, "search")
 ```
 
-`endpoint` is normally `SomeController.action` (unbound method). Future instantiates the controller per request.
+`endpoint` is normally `SomeController.action` (unbound method). Future instantiates the controller per request. Routes are plain lists — no route decorators.
 
 ## Path parameters
 ```python
-Get("/users/<int:user_id>/<str:arg2>", DebugController.args, "user")
-Get("/items/<uuid:item_id>", ItemController.show, "item")
+Get("/stocks/<str:stock_id>", StockController.get_stock, "stocks.show")
+Get("/trades/user/<str:user_id>", TradeController.get_trades_by_user, "trades.by_user")
 ```
 
-Values are passed as kwargs to the action. Types use `Route.value_patterns` (`int`, `str`/`string`, `uuid`, …).
+Values are kwargs on the action. Patterns: `<int:name>`, `<str:name>` / `<string:name>`, `<uuid:name>`, plus `/users/:id` and `{id}` forms.
 
-Also supported:
-
-- `/users/:user_id`
-- `/users/{user_id}`
-- catch-all `*` (see `Route.compile_pattern`)
-
-## HTTP methods
-Use the matching helper (`Get`, `Post`, …). Same path with different methods is fine:
-
+## Groups
 ```python
-Get("/items", ItemController.index, "items.index")
-Post("/items", ItemController.create, "items.create")
-```
+from future.openapi import openapi_routes
+from future.middleware import CORSMiddleware
+from future.routing import RouteGroup, Get
+from app.controllers.StockController import StockController
+from app.controllers.TradeController import TradeController
 
-Wrong method on a registered path returns **405** with an `Allow` header. Duplicate path **and** method still conflicts at registration.
-
-## Route groups
-```python
-RouteGroup(
-    name="Api",
-    prefix="/api",
-    # subdomain="api",   # requires APP_DOMAIN to be set
-    middlewares=[AuthMiddleware],
-    routes=[
-        Get("/trades", TradeController.get_trades, "trades"),
-        RouteGroup(
-            name="Admin",
-            prefix="/admin",
-            middlewares=[AdminMiddleware],
-            routes=[Get("/ping", AdminController.ping, "admin.ping")],
-        ),
-    ],
-)
+routes = [
+    RouteGroup(
+        name="Docs",
+        routes=openapi_routes(uis=["swagger", "redoc", "scalar", "rapidoc"]),
+    ),
+    RouteGroup(
+        prefix="/stocks",
+        name="Stocks",
+        routes=[
+            Get("/", StockController.get_stocks, "stocks"),
+            Get("/<str:stock_id>", StockController.get_stock, "stocks.show"),
+        ],
+    ),
+    RouteGroup(
+        prefix="/trades",
+        name="Trades",
+        middlewares=[CORSMiddleware],
+        routes=[
+            Get("/", TradeController.get_trades, "trades"),
+            Get("/<str:trade_id>", TradeController.get_trade, "trades.show"),
+        ],
+    ),
+]
 ```
 
 - `prefix` concatenates for nested groups.
-- `subdomain` is ignored in **domainless** mode (`APP_DOMAIN=""`).
-- Middleware accumulates outer → inner → route. For `/api/admin/ping` above, `AuthMiddleware` then `AdminMiddleware` run `before` in that order; `after` runs in reverse.
+- `subdomain` needs a real `APP_DOMAIN` (ignored when `APP_DOMAIN=""`).
+- Middleware: see [Middleware](middleware.md).
 
 ## WebSockets
-`WebSocket("/ws/<int:id>", …)` mirrors HTTP for middleware, controller DI, and path params. `WebSocketResponse` accepts, sends an optional greeting, then runs a duplex receive/echo loop until disconnect (errors close with 1011). Treat as a usable echo-style session, not a full WebSocket framework — see [Gaps](gaps.md) / [HTTP](http.md) for the overall stack.
+`WebSocket("/ws/<int:id>", …)` — see [WebSockets](websockets.md).
 
-## Listing routes
+## List routes
 ```bash
-poetry run future routes
+future routes
 ```
 
-Expects an `app` in `run.py`.
+Expects `app` in `run.py`.

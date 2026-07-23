@@ -1,27 +1,28 @@
 # Future
 Minimal, decorator-free [ASGI](https://asgi.readthedocs.io/) framework for Python web APIs.
 
-Future favors **explicit code**: controllers and middleware receive `Request` / `Response` via a base `__init__`, routes are plain lists, and there are no route decorators.
+Future is built so you can stand up backends for larger applications quickly, with a clean separation between routing, controllers, middleware, models, and configuration. Explicit code over magic: controllers receive `request` / `response` from a base class, routes are plain lists, and there are no annoying decorators that you have to repeatedly add for every route.
 
-## What works today
-| Area | Status |
-|------|--------|
-| HTTP routing + path params | Solid |
-| Controllers (`self.request` / `self.response`) | Solid |
-| Middleware `before` / `after` | Solid |
-| Response builder (`json`, `html`, `text`, …) | Solid |
-| OpenAPI UIs (Swagger, ReDoc, Scalar, RapiDoc) | Solid |
-| Sessions (opt-in cookie middleware) | Solid |
-| Active Record (SQLite, MySQL, Postgres, Elasticsearch, MongoDB, ClickHouse, Redis) | Usable |
-| Migrations / seeds | Usable (driver-dependent) |
-| Lifespan + interval scheduler | Solid |
-| CLI (`init`, `routes`, `migrate`, `seed`, `make:*`, `run`) | Solid |
-| WebSockets | Usable (duplex echo) |
-| Auth package | Stubs only |
-| GraphQL | Demo only |
-| MkDocs | Material theme |
+## What you get
+**Routing for real apps** — Group routes with prefixes, subdomains, and shared middleware. Nest groups when APIs grow. Path parameters land as action kwargs.
 
-See [Gaps and roadmap](gaps.md) for what is missing on purpose vs unfinished.
+**OpenAPI that stays in sync** — Spec and interactive UIs (Swagger, ReDoc, Scalar, RapiDoc) follow your registered routes and docstrings. No parallel hand-maintained catalog of endpoints.
+
+**Active Record, database-agnostic** — One `Model` API across SQLite, MySQL, Postgres, Elasticsearch, MongoDB, ClickHouse, and Redis. Point `DATABASES` at another driver, migrate, and seed again — same models and CLI flow.
+
+**Migrations and seeds from models** — Annotate fields on the model; the CLI generates migration and seeder stubs. Run them against whichever connection is configured.
+
+**CLI for day-to-day work** — Scaffold a project (`future init`), generate models / controllers / middleware / migrations / seeds, list routes, migrate, seed, and run the app.
+
+**HTTP and WebSockets** — Familiar request/response builders, middleware `before` / `after`, sessions and CORS when you opt in. WebSocket routes use the same grouping and controller pattern.
+
+**Lifespan and scheduled work** — Startup / shutdown hooks and fixed-interval tasks without a separate worker framework for simple jobs.
+
+## Design
+1. **No decorators** on framework or app code we control.
+2. **Explicit over magic** — readable dispatch; no hidden IoC by default.
+3. **Opt-in features** — sessions, OpenAPI UIs, and DB drivers are chosen in app config.
+4. **Agnostic models** — switch underlying store in settings; keep the same Active Record code.
 
 ## Quick start
 ```python
@@ -33,7 +34,7 @@ from future.routing import Get, RouteGroup
 
 class HomeController(Controller):
     async def index(self) -> Response:
-        return self.response.text("Hello from Future")
+        return self.response.json({"ok": True})
 
 routes = [
     RouteGroup(
@@ -42,47 +43,33 @@ routes = [
     )
 ]
 
-config = {"APP_DOMAIN": "", "APP_NAME": "Demo"}
-app = Future(lifespan=Lifespan([], [], []), config=config)
+lifespan = Lifespan(startup_tasks=[], shutdown_tasks=[], cron_tasks=[])
+app = Future(lifespan=lifespan, config={"APP_DOMAIN": "", "APP_NAME": "Demo"})
 app.add_routes(routes)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000)
 ```
 
-`Future` **requires** a `Lifespan` instance (startup / shutdown / cron tasks).
+`Future` always needs a `Lifespan` (empty startup / shutdown / cron lists are fine). For a full project layout, see [Getting started](getting-started.md).
 
-## Request flow
-```mermaid
-flowchart TD
-  asgi[ASGI http scope]
-  req[Request]
-  res[Response builder]
-  before[middleware.before]
-  short{Response returned?}
-  ctrl[Controller action]
-  after[middleware.after reverse]
-  send[Send response]
-  asgi --> req --> res --> before --> short
-  short -->|yes| send
-  short -->|no| ctrl --> after --> send
-```
+## Guides
+Published at [nicolaipre.github.io/future](https://nicolaipre.github.io/future/). Local preview: `poetry install --with docs && poetry run mkdocs serve`.
 
-## Documentation
-- [Installation](installation.md)
-- [Getting started](getting-started.md)
-- [HTTP: Request, Response, Middleware](http.md)
-- [Routing](routing.md)
-- [Database and models](database.md)
-- [OpenAPI](openapi.md)
-- [Lifespan and tasks](lifespan-tasks.md)
-- [CLI](cli.md)
-- [Quick reference](quick-reference.md)
-- [Examples](examples.md)
-- [Gaps and roadmap](gaps.md)
-
-## Design rules
-1. **No decorators** on framework or app code paths we control.
-2. **Explicit over magic** — prefer readable dispatch over IoC containers.
-3. **Opt-in features** — sessions, OpenAPI UIs, and DB drivers are chosen by the app.
-4. **Agnostic models** — same Active Record API across drivers that implement it.
+| Guide | Package / topic |
+|-------|-----------------|
+| [Installation](installation.md) | Install + `future init` |
+| [Getting started](getting-started.md) | Project layout and boot |
+| [Controllers](controllers.md) | `future.controllers` |
+| [Request](request.md) | `future.request` |
+| [Response](response.md) | `future.response` |
+| [Routing](routing.md) | `future.routing` |
+| [Middleware](middleware.md) | `future.middleware` |
+| [WebSockets](websockets.md) | `WebSocket` + `WebSocketResponse` |
+| [Lifespan and tasks](lifespan-tasks.md) | `future.lifespan` / `future.tasks` |
+| [Configuration](configuration.md) | Settings, env, `DATABASES` |
+| [Models](models.md) | `future.models` — annotations; generate migrate/seed |
+| [Database](database.md) | Connections and drivers |
+| [OpenAPI](openapi.md) | `future.openapi` |
+| [CLI](cli.md) | `future` console script |
+| [Gaps](gaps.md) | What’s unfinished |

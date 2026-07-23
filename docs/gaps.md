@@ -18,7 +18,7 @@ CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain
 `future.authentication.*` are stubs (`auth_type` only). `BaseAuthentication` is an alias of `Authentication` so placeholder subclasses import. No JWT / OIDC / session-login middleware ships yet.
 
 ## WebSockets
-`handle_websocket_request` mirrors HTTP for middleware `before` / `after`, controller DI, and path params, and closes with 1011 on unhandled errors. `WebSocketResponse` accepts, sends an optional greeting, then runs a duplex receive/echo loop until disconnect. Tests cover connect + duplex send/recv.
+Usable duplex echo — see [WebSockets](websockets.md). `handle_websocket_request` mirrors HTTP for middleware, controller DI, and path params; errors close with 1011.
 
 - `StreamingResponse` for HTTP chunked/stream bodies is still unimplemented
 
@@ -29,6 +29,8 @@ CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain
 
 ## GraphQL
 `GraphQLController.query` accepts `POST` with `{query, variables?, operationName?}`. Schema from `config["GRAPHQL_SCHEMA"]`, else the in-repo demo schema. Docs must not claim `app.add_graphql_route`.
+
+- **`strawberry.type(Model)` vs Active Record** — Strawberry’s `type(...)` dataclass-wraps the class in place, which breaks `ModelMeta` (`User.where` / `User.find` via empty `self()`). Apps must build separate GraphQL types from model `__annotations__` and return AR instances from resolvers. Later: see if models can become dataclass-compatible **without** `@dataclass` / decorator hacks so one class can serve ORM + GraphQL the way we want; design carefully and keep the no-decorator rule.
 
 ## Plugins
 `Plugin` is a marker. Only `ElasticsearchPlugin` is substantial. No lifecycle hooks into `Future` boot.

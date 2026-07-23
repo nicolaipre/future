@@ -1,63 +1,46 @@
-site_name: Future Framework
-site_description: A minimalist, decorator-free ASGI web framework for Python
-site_author: Future Framework Team
+site_name: Future
+site_description: Minimal, decorator-free ASGI framework for Python
+site_author: Future
+site_url: https://nicolaipre.github.io/future/
 
-repo_name: future
+repo_name: nicolaipre/future
 repo_url: https://github.com/nicolaipre/future
-edit_uri: edit/main/docs/
+edit_uri: edit/master/docs/
 
 theme:
-  name: material
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - content.code.copy
-    - search.suggest
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - python
+    - bash
+    - yaml
+    - toml
 
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Quick start: quick-start.md
   - Getting started: getting-started.md
-  - HTTP:
-    - Request, Response, Middleware: http.md
+  - Framework:
+    - Controllers: controllers.md
+    - Request: request.md
+    - Response: response.md
     - Routing: routing.md
-  - Database: database.md
-  - OpenAPI: openapi.md
-  - Lifespan and tasks: lifespan-tasks.md
-  - CLI: cli.md
-  - Quick reference: quick-reference.md
-  - Examples: examples.md
-  - Gaps and roadmap: gaps.md
+    - Middleware: middleware.md
+    - WebSockets: websockets.md
+    - Lifespan and tasks: lifespan-tasks.md
+    - Configuration: configuration.md
+    - Models: models.md
+    - Database: database.md
+    - OpenAPI: openapi.md
+    - CLI: cli.md
+  - Gaps: gaps.md
 
 plugins:
   - search
 
 markdown_extensions:
   - admonition
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight:
-      anchor_linenums: true
+  - tables
+  - fenced_code
   - toc:
       permalink: true
-  - tables
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/nicolaipre/future
