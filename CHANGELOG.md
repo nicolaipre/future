@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.1.1] - 2026-07-23
+### Added
+- PyPI project links: homepage, repository, documentation, and bug tracker
+
+### Changed
+- Docs, badges, and `future init` scaffold point at `nicolaipre/future-framework` and install from PyPI only
+
+
 ## [1.1.0] - 2026-07-23
 ### Added
 - `Query.limit(n)` — portable pagination for `where` / `order_by` chains across all Active Record drivers
