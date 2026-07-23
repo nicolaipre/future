@@ -2,7 +2,7 @@
 Minimal, decorator-free [ASGI](https://asgi.readthedocs.io/)-based framework for web APIs — routing, middleware, Active Record, migrations, seeds, OpenAPI, and interval tasks.
 
 [![Build Status](https://github.com/nicolaipre/future-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaipre/future-framework/actions)
-[![Package version](https://badge.fury.io/py/future-framework.svg)](https://pypi.org/project/future-framework/)
+[![Package version](https://badge.fury.io/py/future-framework.svg?v=1.1.2)](https://pypi.org/project/future-framework/)
 [![codecov](https://codecov.io/gh/nicolaipre/future-framework/branch/master/graph/badge.svg)](https://codecov.io/gh/nicolaipre/future-framework)
 
 ## Documentation
