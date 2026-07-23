@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Future" /><link rel="canonical" href="https://nicolaipre.github.io/future/models/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Models - Future</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Models";
+        var mkdocs_page_input_path = "models.md";
+        var mkdocs_page_url = "/future/models/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/toml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Future
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Framework</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../controllers/">Controllers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../request/">Request</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../response/">Response</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../routing/">Routing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../middleware/">Middleware</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../websockets/">WebSockets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../lifespan/">Lifespan</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tasks/">Tasks</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration/">Configuration</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Models</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#define-a-model">Define a model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#annotations-drive-generators">Annotations drive generators</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#crud">CRUD</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#query">Query</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../database/">Database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../docker/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../openapi/">OpenAPI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../gaps/">Gaps</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Future</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Framework</li>
+      <li class="breadcrumb-item active">Models</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/nicolaipre/future/edit/master/docs/models.md">Edit on nicolaipre/future</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="models">Models<a class="headerlink" href="#models" title="Permanent link">&para;</a></h1>
+<p>Active Record models live in <code>app/models/</code> and inherit <code>future.models.Model</code>. <strong>Class annotations are the source of truth</strong> for columns — migrations and seeders are generated from them.</p>
+<h2 id="define-a-model">Define a model<a class="headerlink" href="#define-a-model" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">future make:model Stock
+</code></pre>
+<pre><code class="language-python">from future.models import Model
+
+class Stock(Model):
+    # __table__ = &quot;stocks&quot;        # optional; default is tableized class name (Stock → stocks)
+    # __connection__ = &quot;default&quot;  # name from DATABASES / Connections
+
+    id: str
+    name: str
+    symbol: str
+    instrument_id: str
+    price: float | None
+</code></pre>
+<p>Register connections in <a href="../configuration/">Configuration</a> / <a href="../database/">Database</a> before using the model at runtime or in CLI.</p>
+<h2 id="annotations-drive-generators">Annotations drive generators<a class="headerlink" href="#annotations-drive-generators" title="Permanent link">&para;</a></h2>
+<p>After annotations are set:</p>
+<pre><code class="language-bash">future make:migration Stock   # → database/migrations/…_create_stocks.py from annotations
+future make:seed Stock        # → database/seeds/StockSeeder.py from annotations
+
+# or every annotated model under app/models/:
+future make:migrations
+future make:seeds             # skips seed files that already exist
+</code></pre>
+<p>Then apply / run:</p>
+<pre><code class="language-bash">future migrate
+future seed                   # all seeders
+future seed StockSeeder       # one class name
+</code></pre>
+<p>Prefer either <code>make:migration Stock</code> <strong>or</strong> <code>make:migrations</code> for the same model in one session — not both (duplicate files).</p>
+<p>Generated migration (from the <code>Stock</code> annotations above):</p>
+<pre><code class="language-python">from future.migrations.Migration import Migration
+from future.migrations.Schema import Schema
+
+class CreateStocks(Migration):
+    __connection__ = &quot;default&quot;
+
+    def up(self):
+        with Schema.create(&quot;stocks&quot;) as table:
+            table.id()
+            table.string(&quot;name&quot;)
+            table.string(&quot;symbol&quot;)
+            table.string(&quot;instrument_id&quot;)
+            table.float(&quot;price&quot;).nullable()
+
+    def down(self):
+        Schema.drop(&quot;stocks&quot;)
+</code></pre>
+<p>Generated seeder uses the model fields (Faker stubs):</p>
+<pre><code class="language-python">from faker import Faker
+from future.seeds.Seeder import Seeder
+from app.models.Stock import Stock
+
+class StockSeeder(Seeder):
+    def run(self):
+        fake = Faker()
+        for _ in range(10):
+            Stock(
+                id=fake.uuid4(),
+                name=fake.company(),
+                symbol=fake.unique.lexify(text=&quot;????&quot;).upper(),
+                instrument_id=str(fake.random_int(10000, 99999)),
+                price=float(fake.pyfloat(min_value=1, max_value=100)),
+            ).save()
+</code></pre>
+<p>Edit generated files if you need indexes, extras, or richer seed data. Re-running generators does not replace hand-edited migrations; seeds skip existing files on <code>make:seeds</code>.</p>
+<h2 id="crud">CRUD<a class="headerlink" href="#crud" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">stock = Stock(id=&quot;1&quot;, name=&quot;Equinor&quot;, symbol=&quot;EQNR&quot;, instrument_id=&quot;16105067&quot;, price=250.0)
+stock.save()
+
+stock = Stock.find(&quot;1&quot;)
+stocks = Stock.all()
+stock.price = 251.0
+stock.save()
+stock.delete()
+</code></pre>
+<h2 id="query">Query<a class="headerlink" href="#query" title="Permanent link">&para;</a></h2>
+<p><code>where</code> / <code>order_by</code> return a <strong>Query</strong> — call <code>.get()</code> or <code>.first()</code> to hit the DB:</p>
+<pre><code class="language-python">Stock.where(&quot;symbol&quot;, &quot;EQNR&quot;).first()
+Stock.where(&quot;price&quot;, &quot;&gt;&quot;, 100).order_by(&quot;price&quot;, &quot;desc&quot;).get()
+Stock.where(&quot;name&quot;, &quot;like&quot;, &quot;%Equinor%&quot;).limit(20).get()
+</code></pre>
+<p>In a controller:</p>
+<pre><code class="language-python">async def get_stocks(self) -&gt; Response:
+    ticker = self.request.query.get(&quot;ticker&quot;)
+    if ticker:
+        stocks = Stock.where(&quot;symbol&quot;, ticker).get()
+    else:
+        stocks = Stock.all()
+    return self.response.json([s.to_dict() for s in stocks], status=200)
+</code></pre>
+<p>See <a href="../cli/">CLI</a> for the full command list and <a href="../database/">Database</a> for drivers and connection registration.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../configuration/" class="btn btn-neutral float-left" title="Configuration"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../database/" class="btn btn-neutral float-right" title="Database">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/nicolaipre/future" class="fa fa-code-fork" style="color: #fcfcfc"> nicolaipre/future</a>
+        </span>
+    
+    
+      <span><a href="../configuration/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../database/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

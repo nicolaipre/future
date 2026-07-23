@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Future" /><link rel="canonical" href="https://nicolaipre.github.io/future/configuration/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Configuration - Future</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Configuration";
+        var mkdocs_page_input_path = "configuration.md";
+        var mkdocs_page_url = "/future/configuration/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/toml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Future
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Framework</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../controllers/">Controllers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../request/">Request</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../response/">Response</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../routing/">Routing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../middleware/">Middleware</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../websockets/">WebSockets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../lifespan/">Lifespan</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tasks/">Tasks</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#option-a-env-python-dotenv-scaffold-default">Option A — .env + python-dotenv (scaffold default)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#option-b-yaml-ansible-vault">Option B — YAML + Ansible Vault</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#database-map">Database map</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config-keys-the-core-uses">Config keys the core uses</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../database/">Database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../docker/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../openapi/">OpenAPI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../gaps/">Gaps</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Future</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Framework</li>
+      <li class="breadcrumb-item active">Configuration</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/nicolaipre/future/edit/master/docs/configuration.md">Edit on nicolaipre/future</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
+<p>Scaffolded apps load settings in <code>app/config/Settings.py</code> and build the connection map in <code>app/config/Database.py</code>. Pass <code>DATABASES</code> into <code>Future(config=...)</code> in <code>run.py</code>.</p>
+<h2 id="option-a-env-python-dotenv-scaffold-default">Option A — <code>.env</code> + python-dotenv (scaffold default)<a class="headerlink" href="#option-a-env-python-dotenv-scaffold-default" title="Permanent link">&para;</a></h2>
+<p><code>future init</code> creates <code>.env.example</code>. Copy it and edit:</p>
+<pre><code class="language-bash">cp .env.example .env
+</code></pre>
+<pre><code class="language-env">APP_NAME=Future
+APP_DOMAIN=
+APP_HOST=127.0.0.1
+APP_PORT=8000
+APP_DEBUG=True
+APP_WORKERS=1
+DB_DATABASE=database
+</code></pre>
+<p><code>app/config/Settings.py</code> (generated):</p>
+<pre><code class="language-python">from os import environ as env
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=&quot;.env&quot;)
+
+APP_NAME = str(env.get(&quot;APP_NAME&quot;, &quot;Future&quot;))
+APP_DEBUG = env.get(&quot;APP_DEBUG&quot;, &quot;False&quot;).lower() == &quot;true&quot;
+APP_HOST = str(env.get(&quot;APP_HOST&quot;, &quot;127.0.0.1&quot;))
+APP_PORT = int(env.get(&quot;APP_PORT&quot;, 8000))
+APP_WORKERS = int(env.get(&quot;APP_WORKERS&quot;, 1))
+APP_DOMAIN = str(env.get(&quot;APP_DOMAIN&quot;, &quot;&quot;))
+
+DB_DATABASE = str(env.get(&quot;DB_DATABASE&quot;, &quot;database&quot;))
+</code></pre>
+<p>SQLite opens <code>{DB_DATABASE}.sqlite</code> (e.g. <code>database</code> → <code>database.sqlite</code>).</p>
+<h2 id="option-b-yaml-ansible-vault">Option B — YAML + Ansible Vault<a class="headerlink" href="#option-b-yaml-ansible-vault" title="Permanent link">&para;</a></h2>
+<p>Same idea: load a file once in <code>Settings.py</code>, export module-level constants. Useful when secrets are vault-encrypted:</p>
+<pre><code class="language-yaml"># environment.yml
+app_name: &quot;myapp&quot;
+app_domain: &quot;example.com&quot;
+app_host: &quot;127.0.0.1&quot;
+app_port: 5000
+app_workers: 1
+app_debug: true
+sqlite_database: &quot;myapp&quot;
+# secret_token: !vault |
+#   $ANSIBLE_VAULT;1.1;AES256
+#   ...
+</code></pre>
+<pre><code class="language-python"># app/config/Settings.py — sketch
+from ansible.parsing.dataloader import DataLoader
+from ansible.parsing.vault import VaultSecret, VaultSecretsContext
+from ansible.module_utils.common.text.converters import to_bytes
+from ansible.constants import DEFAULT_VAULT_ID_MATCH
+
+def load_environment_config(path: str) -&gt; dict:
+    vault_pass = &quot;...&quot;  # or getpass()
+    loader = DataLoader()
+    secrets = [(DEFAULT_VAULT_ID_MATCH, VaultSecret(to_bytes(vault_pass)))]
+    loader.set_vault_secrets(vault_secrets=secrets)
+    VaultSecretsContext.initialize(VaultSecretsContext(secrets))
+    data = loader.load_from_file(file_name=path)
+    return {key: value if isinstance(value, (bool, int)) else str(value) for key, value in data.items()}
+
+config = load_environment_config(&quot;./environment.yml&quot;)
+APP_NAME = str(config[&quot;app_name&quot;])
+APP_DOMAIN = str(config[&quot;app_domain&quot;])
+APP_HOST = str(config[&quot;app_host&quot;])
+APP_PORT = int(config[&quot;app_port&quot;])
+APP_DEBUG = config[&quot;app_debug&quot;]
+APP_WORKERS = int(config[&quot;app_workers&quot;])
+SQLITE_DATABASE = str(config[&quot;sqlite_database&quot;])
+</code></pre>
+<p>Encrypt a string into the file:</p>
+<pre><code class="language-bash">ansible-vault encrypt_string 'mytoken' --name 'secret_token' --ask-vault-pass &gt;&gt; environment.yml
+</code></pre>
+<p>Pick <strong>one</strong> loader for the app (dotenv <strong>or</strong> YAML). Controllers and <code>Database.py</code> only import the constants.</p>
+<h2 id="database-map">Database map<a class="headerlink" href="#database-map" title="Permanent link">&para;</a></h2>
+<p><code>app/config/Database.py</code> is data only — no <code>Connections</code> call at import:</p>
+<pre><code class="language-python">from future.databases.SQLite import SQLite
+from app.config.Settings import DB_DATABASE
+
+DATABASES = {
+    &quot;default&quot;: &quot;sqlite&quot;,
+    &quot;sqlite&quot;: SQLite(database=DB_DATABASE),
+}
+</code></pre>
+<p>Multi-driver example (same pattern — values from Settings):</p>
+<pre><code class="language-python">from future.databases.SQLite import SQLite
+from future.databases.MySQL import MySQL
+from future.databases.Postgres import Postgres
+# ...
+DATABASES = {
+    &quot;default&quot;: &quot;sqlite&quot;,
+    &quot;sqlite&quot;: SQLite(database=SQLITE_DATABASE),
+    &quot;mysql&quot;: MySQL(host=MYSQL_HOST, port=MYSQL_PORT, username=MYSQL_USERNAME, password=MYSQL_PASSWORD, database=MYSQL_DATABASE),
+    &quot;postgres&quot;: Postgres(host=POSTGRES_HOST, port=POSTGRES_PORT, username=POSTGRES_USERNAME, password=POSTGRES_PASSWORD, database=POSTGRES_DATABASE),
+}
+</code></pre>
+<p>Wire it in <code>run.py</code>:</p>
+<pre><code class="language-python">config = {
+    &quot;APP_DOMAIN&quot;: APP_DOMAIN,
+    &quot;APP_NAME&quot;: APP_NAME,
+    &quot;DATABASES&quot;: DATABASES,
+}
+app = Future(lifespan=lifespan, config=config)
+</code></pre>
+<h2 id="config-keys-the-core-uses">Config keys the core uses<a class="headerlink" href="#config-keys-the-core-uses" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>APP_DOMAIN</code></td>
+<td>Host/subdomain routing; <code>""</code> = domainless</td>
+</tr>
+<tr>
+<td><code>APP_NAME</code></td>
+<td>Banner / OpenAPI title fallback</td>
+</tr>
+<tr>
+<td><code>APP_DEBUG</code></td>
+<td>Uvicorn reload; log level</td>
+</tr>
+<tr>
+<td><code>DATABASES</code></td>
+<td>Connection registry at boot</td>
+</tr>
+<tr>
+<td><code>OPENAPI</code></td>
+<td>Docs enablement and UIs</td>
+</tr>
+<tr>
+<td><code>GRAPHQL_SCHEMA</code></td>
+<td>Optional Strawberry schema for <code>GraphQLController</code></td>
+</tr>
+<tr>
+<td><code>APP_ASGI</code></td>
+<td>Import string for reload / multi-worker (default <code>run:app</code>)</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../tasks/" class="btn btn-neutral float-left" title="Tasks"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../models/" class="btn btn-neutral float-right" title="Models">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/nicolaipre/future" class="fa fa-code-fork" style="color: #fcfcfc"> nicolaipre/future</a>
+        </span>
+    
+    
+      <span><a href="../tasks/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../models/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

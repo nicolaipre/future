@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Future" /><link rel="canonical" href="https://nicolaipre.github.io/future/openapi/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Future" /><link rel="canonical" href="https://nicolaipre.github.io/future/request/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>OpenAPI - Future</title>
+    <title>Request - Future</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "OpenAPI";
-        var mkdocs_page_input_path = "openapi.md";
-        var mkdocs_page_url = "/future/openapi/";
+        var mkdocs_page_name = "Request";
+        var mkdocs_page_input_path = "request.md";
+        var mkdocs_page_url = "/future/request/";
       </script>
     
     <!--[if lt IE 9]>
@@ -59,7 +59,15 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../controllers/">Controllers</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../request/">Request</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Request</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#attributes">Attributes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#body-helpers">Body helpers</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#uploads">Uploads</a>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../response/">Response</a>
                   </li>
@@ -81,15 +89,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../docker/">Docker</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">OpenAPI</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#mount-docs">Mount docs</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#config">Config</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#docstrings">Docstrings</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../openapi/">OpenAPI</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
                   </li>
@@ -113,9 +113,9 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Framework</li>
-      <li class="breadcrumb-item active">OpenAPI</li>
+      <li class="breadcrumb-item active">Request</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/nicolaipre/future/edit/master/docs/openapi.md">Edit on nicolaipre/future</a>
+          <a href="https://github.com/nicolaipre/future/edit/master/docs/request.md">Edit on nicolaipre/future</a>
     </li>
   </ul>
   <hr/>
@@ -123,71 +123,83 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="openapi">OpenAPI<a class="headerlink" href="#openapi" title="Permanent link">&para;</a></h1>
-<p>Future builds an OpenAPI 3 document from registered routes and serves UIs.</p>
-<h2 id="mount-docs">Mount docs<a class="headerlink" href="#mount-docs" title="Permanent link">&para;</a></h2>
-<pre><code class="language-python">from future.openapi import openapi_routes
-from future.routing import RouteGroup
-
-routes = [
-    RouteGroup(
-        name=&quot;Docs&quot;,
-        routes=openapi_routes(uis=[&quot;swagger&quot;, &quot;redoc&quot;, &quot;scalar&quot;, &quot;rapidoc&quot;]),
-    ),
-]
-</code></pre>
-<h2 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
-<pre><code class="language-python">&quot;OPENAPI&quot;: {
-    &quot;enabled&quot;: True,
-    &quot;uis&quot;: [&quot;swagger&quot;, &quot;redoc&quot;, &quot;scalar&quot;, &quot;rapidoc&quot;],
-    &quot;auto_routes&quot;: False,
-    &quot;path_prefix&quot;: &quot;&quot;,
-}
-</code></pre>
+                <h1 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h1>
+<p><code>future.request.Request</code> wraps one ASGI HTTP (or WebSocket) connection. Controllers and middleware use <code>self.request</code>.</p>
+<h2 id="attributes">Attributes<a class="headerlink" href="#attributes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Path</th>
-<th>UI</th>
+<th>Attribute</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>/openapi.json</code></td>
-<td>Schema</td>
+<td><code>method</code></td>
+<td><code>GET</code>, <code>POST</code>, … (or <code>WEBSOCKET</code>)</td>
 </tr>
 <tr>
-<td><code>/docs</code></td>
-<td>Swagger UI</td>
+<td><code>path</code></td>
+<td>URL path</td>
 </tr>
 <tr>
-<td><code>/redoc</code></td>
-<td>ReDoc</td>
+<td><code>scheme</code></td>
+<td><code>http</code> / <code>https</code> / <code>ws</code> / <code>wss</code></td>
 </tr>
 <tr>
-<td><code>/scalar</code></td>
-<td>Scalar</td>
+<td><code>host</code></td>
+<td>From the <code>Host</code> header</td>
 </tr>
 <tr>
-<td><code>/rapidoc</code></td>
-<td>RapiDoc</td>
+<td><code>headers</code></td>
+<td><code>dict[str, str]</code> (decoded from ASGI byte pairs)</td>
+</tr>
+<tr>
+<td><code>cookies</code></td>
+<td>Parsed from <code>Cookie</code></td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td>Query string: single values are <code>str</code>, repeated keys are <code>list[str]</code></td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>Plain <code>dict</code> (persist with <code>SessionMiddleware</code>)</td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td>Scratch <code>dict</code> for middleware → controller</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>Raw ASGI scope</td>
+</tr>
+<tr>
+<td><code>receive</code></td>
+<td>ASGI receive callable</td>
 </tr>
 </tbody>
 </table>
-<h2 id="docstrings">Docstrings<a class="headerlink" href="#docstrings" title="Permanent link">&para;</a></h2>
-<p>First line → <code>summary</code>; rest → <code>description</code>:</p>
-<pre><code class="language-python">async def get_stocks(self) -&gt; Response:
-    &quot;&quot;&quot;List stocks, optionally filtered by instrument_id or ticker.
-
-    Query params: `instrument_id`, `ticker` (symbol).
-    &quot;&quot;&quot;
+<h2 id="body-helpers">Body helpers<a class="headerlink" href="#body-helpers" title="Permanent link">&para;</a></h2>
+<p>Cached after the first read:</p>
+<pre><code class="language-python">await self.request.body()    # bytes
+await self.request.json()    # dict
+await self.request.form()    # urlencoded or multipart fields
+await self.request.files()   # multipart UploadedFile values (after form())
 </code></pre>
+<pre><code class="language-python">self.request.query.get(&quot;ticker&quot;)
+self.request.headers.get(&quot;authorization&quot;)
+self.request.cookies.get(&quot;session&quot;)
+self.request.session[&quot;user&quot;] = &quot;alice&quot;
+</code></pre>
+<h2 id="uploads">Uploads<a class="headerlink" href="#uploads" title="Permanent link">&para;</a></h2>
+<p><code>files()</code> returns <code>UploadedFile</code> instances (<code>filename</code>, <code>content_type</code>, <code>content</code>).</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../docker/" class="btn btn-neutral float-left" title="Docker"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../cli/" class="btn btn-neutral float-right" title="CLI">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../controllers/" class="btn btn-neutral float-left" title="Controllers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../response/" class="btn btn-neutral float-right" title="Response">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -214,10 +226,10 @@ routes = [
         </span>
     
     
-      <span><a href="../docker/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../controllers/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../cli/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../response/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
