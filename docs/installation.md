@@ -4,17 +4,27 @@
 - [Poetry](https://python-poetry.org/) (recommended) or pip
 
 ## Package
+PyPI name is **`future-framework`**; import name is always **`future`**.
+
+```bash
+poetry add future-framework
+# or
+pip install future-framework
+```
+
+From git (before / instead of PyPI):
+
 ```bash
 poetry add git+https://github.com/nicolaipre/future.git@master
 ```
 
-Or in `pyproject.toml`:
-
 ```toml
-future = { git = "https://github.com/nicolaipre/future.git", rev = "master" }
-```
+# pyproject.toml — PyPI
+future-framework = "^1.1.0"
 
-Import name is always `future`:
+# or git
+future-framework = { git = "https://github.com/nicolaipre/future.git", rev = "master" }
+```
 
 ```python
 from future.application import Future

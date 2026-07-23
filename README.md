@@ -2,7 +2,7 @@
 Minimal, decorator-free [ASGI](https://asgi.readthedocs.io/) framework for Python APIs — routing, middleware, Active Record, migrations, seeds, OpenAPI, and interval tasks.
 
 [![Build Status](https://github.com/nicolaipre/future/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolaipre/future/actions)
-[![Package version](https://badge.fury.io/py/star.svg)](https://pypi.org/project/future-api/)
+[![Package version](https://badge.fury.io/py/future-framework.svg)](https://pypi.org/project/future-framework/)
 [![codecov](https://codecov.io/gh/nicolaipre/future/branch/master/graph/badge.svg)](https://codecov.io/gh/nicolaipre/future)
 
 ## Documentation
@@ -10,10 +10,12 @@ Published at **[nicolaipre.github.io/future](https://nicolaipre.github.io/future
 
 ## Install
 ```bash
-poetry add git+https://github.com/nicolaipre/future.git@master
-# or path dep while developing: future = { path = "../future", develop = true }
+poetry add future-framework
+# or from git: poetry add git+https://github.com/nicolaipre/future.git@master
 poetry run future init myproject
 ```
+
+Import name is `future` (`from future.application import Future`).
 
 ## Hello
 ```python
