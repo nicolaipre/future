@@ -60,9 +60,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 python-dotenv = "^1.0.1"
-future = {git = "ssh://git@github.com/nicolaipre/future.git"}
+future-framework = { git = "https://github.com/nicolaipre/future.git", rev = "master" }
+# Or from PyPI after publish: future-framework = "^1.1.0"
 # Or, while developing Future next to this app:
-# future = { path = "../future", develop = true }
+# future-framework = { path = "../future", develop = true }
 
 [build-system]
 requires = ["poetry-core"]

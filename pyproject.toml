@@ -1,10 +1,11 @@
 [tool.poetry]
-name = "future"
+name = "future-framework"
 version = "1.1.0"
 description = "Next Gen. ASGI Framework for minimal Web APIs"
 authors = ["nicolaipre"]
 license = "LICENSE"
 readme = "README.md"
+packages = [{ include = "future" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
