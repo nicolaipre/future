@@ -129,12 +129,20 @@
 <li><a href="https://python-poetry.org/">Poetry</a> (recommended) or pip</li>
 </ul>
 <h2 id="package">Package<a class="headerlink" href="#package" title="Permanent link">&para;</a></h2>
+<p>PyPI name is <strong><code>future-framework</code></strong>; import name is always <strong><code>future</code></strong>.</p>
+<pre><code class="language-bash">poetry add future-framework
+# or
+pip install future-framework
+</code></pre>
+<p>From git (before / instead of PyPI):</p>
 <pre><code class="language-bash">poetry add git+https://github.com/nicolaipre/future.git@master
 </code></pre>
-<p>Or in <code>pyproject.toml</code>:</p>
-<pre><code class="language-toml">future = { git = &quot;https://github.com/nicolaipre/future.git&quot;, rev = &quot;master&quot; }
+<pre><code class="language-toml"># pyproject.toml — PyPI
+future-framework = &quot;^1.1.0&quot;
+
+# or git
+future-framework = { git = &quot;https://github.com/nicolaipre/future.git&quot;, rev = &quot;master&quot; }
 </code></pre>
-<p>Import name is always <code>future</code>:</p>
 <pre><code class="language-python">from future.application import Future
 </code></pre>
 <h2 id="scaffold-an-app">Scaffold an app<a class="headerlink" href="#scaffold-an-app" title="Permanent link">&para;</a></h2>
