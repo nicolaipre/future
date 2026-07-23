@@ -1,4 +1,5 @@
 import json
+import re
 
 from future.databases.Database import Database
 
@@ -78,7 +79,18 @@ class Redis(Database):
                     filtered.append(row)
                 elif operator == "in" and current in list(value):
                     filtered.append(row)
-                elif operator not in ("=", "!=", ">", ">=", "<", "<=", "in"):
+                elif operator == "like" and current is not None:
+                    parts = []
+                    for char in str(value):
+                        if char == "%":
+                            parts.append(".*")
+                        elif char == "_":
+                            parts.append(".")
+                        else:
+                            parts.append(re.escape(char))
+                    if re.search("^" + "".join(parts) + "$", str(current)):
+                        filtered.append(row)
+                elif operator not in ("=", "!=", ">", ">=", "<", "<=", "in", "like"):
                     raise ValueError(f"Unsupported operator: {operator}")
             rows = filtered
         if orders:

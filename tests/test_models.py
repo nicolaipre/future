@@ -1,6 +1,7 @@
 from future.databases.Connections import Connections
 from future.databases.Database import Database
 from future.models import Model, Query
+import re
 
 
 class FakeDatabase(Database):
@@ -39,6 +40,23 @@ class FakeDatabase(Database):
                 rows = [row for row in rows if getattr(row, column) == value]
             elif operator == ">":
                 rows = [row for row in rows if getattr(row, column) > value]
+            elif operator == "like":
+                filtered = []
+                for row in rows:
+                    current = getattr(row, column, None)
+                    if current is None:
+                        continue
+                    parts = []
+                    for char in str(value):
+                        if char == "%":
+                            parts.append(".*")
+                        elif char == "_":
+                            parts.append(".")
+                        else:
+                            parts.append(re.escape(char))
+                    if re.search("^" + "".join(parts) + "$", str(current)):
+                        filtered.append(row)
+                rows = filtered
             else:
                 raise ValueError(operator)
         if orders:
@@ -92,6 +110,17 @@ def test_model_where_and_order():
     assert [row.id for row in rows] == ["3", "2"]
     first = Item.where("name", "b").first()
     assert first is not None and first.id == "2"
+
+
+def test_model_where_limit():
+    setup_module()
+    db = Connections()._connections["fake"]
+    db.rows = {}
+    Item(id="1", name="a", price=10).save()
+    Item(id="2", name="b", price=20).save()
+    Item(id="3", name="c", price=30).save()
+    rows = Item.where("price", ">", 10).order_by("price", "desc").limit(1).get()
+    assert [row.id for row in rows] == ["3"]
 
 
 def test_query_repr():

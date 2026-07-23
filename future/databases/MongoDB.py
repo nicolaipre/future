@@ -1,4 +1,5 @@
 from future.databases.Database import Database
+import re
 
 
 class MongoDB(Database):
@@ -67,6 +68,16 @@ class MongoDB(Database):
                 query[column] = {"$lte": value}
             elif operator == "!=":
                 query[column] = {"$ne": value}
+            elif operator == "like":
+                parts = []
+                for char in str(value):
+                    if char == "%":
+                        parts.append(".*")
+                    elif char == "_":
+                        parts.append(".")
+                    else:
+                        parts.append(re.escape(char))
+                query[column] = {"$regex": "^" + "".join(parts) + "$"}
             else:
                 raise ValueError(f"Unsupported operator: {operator}")
         cursor = self.db[model.tableize()].find(query, {"_id": 0})

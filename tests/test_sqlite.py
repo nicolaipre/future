@@ -74,6 +74,10 @@ def test_sqlite_schema_and_crud():
     assert len(cheap) == 1
     assert cheap[0].name == "banana"
 
+    like_rows = Item.where("name", "like", "%anana").get()
+    assert len(like_rows) == 1
+    assert like_rows[0].name == "banana"
+
     ordered = Item.order_by("price", "desc").get()
     assert ordered[0].name == "pear"
 

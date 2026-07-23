@@ -18,6 +18,7 @@ class Query:
         self.model = model
         self.wheres = []
         self.orders = []
+        self.limit_value = None
 
     def where(self, column, *args):
         if len(args) == 1:
@@ -31,8 +32,12 @@ class Query:
         self.orders.append((column, direction))
         return self
 
+    def limit(self, value):
+        self.limit_value = value
+        return self
+
     def get(self):
-        return self.model.connection().get(self.model, self.wheres, orders=self.orders)
+        return self.model.connection().get(self.model, self.wheres, limit=self.limit_value, orders=self.orders)
 
     def first(self):
         results = self.model.connection().get(self.model, self.wheres, limit=1, orders=self.orders)

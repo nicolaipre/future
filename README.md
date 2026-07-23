@@ -58,7 +58,7 @@ from datetime import datetime, timedelta
 from future.application import Future
 from future.controllers import DebugController, GraphQLController, OpenAPIController, WebSocketController, WelcomeController
 from future.middleware import TestMiddlewareRequest, TestMiddlewareResponse
-from future.routing import Get, RouteGroup, WebSocket
+from future.routing import Get, Post, RouteGroup, WebSocket
 from future.settings import APP_DEBUG, APP_DOMAIN, APP_LOG_LEVEL, APP_NAME
 from future.lifespan import Lifespan
 from future.tasks import Task, Unit, check_dns, check_system_uptime, daily_backup
@@ -67,7 +67,7 @@ routes = [
     Get("/users/<int:user_id>/<str:arg2>", DebugController.args, "getUserInfo"),
     Get("/", WelcomeController.root, "Welcome"),
     Get("/test", DebugController.test, "test"),
-    Get("/graphql", GraphQLController.query, "GraphQL"),
+    Post("/graphql", GraphQLController.query, "GraphQL"),
     Get("/openapi.json", OpenAPIController.openapi, "OpenAPI Schema"),
     Get("/docs", OpenAPIController.swagger, "Swagger UI"),
     Get("/redoc", OpenAPIController.redoc, "ReDoc"),

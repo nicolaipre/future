@@ -85,6 +85,8 @@ Trade.where("user_id", ">", 123456789).get()
 Trade.where("user_id", ">", 123456789).first()          # one Trade or None
 Trade.order_by("timestamp", "desc").first()
 Trade.where("price", ">", 50).order_by("price", "desc").get()
+Trade.where("user_name", "like", "%John%").get()        # portable LIKE (% / _); all drivers
+Trade.where("id", "in", ["1", "2"]).limit(20).get()
 ```
 
 Printing a bare Query shows: `<Query; call .get() or .first() to execute>`.
