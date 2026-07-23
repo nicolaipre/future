@@ -35,7 +35,7 @@ class Clickhouse(Database):
         if not rows:
             return None
         names = [column[0] for column in columns]
-        return model.__class__(**dict(zip(names, rows[0])))
+        return model.__class__(**dict(zip(names, rows[0], strict=True)))
 
     def all(self, model):
         if self.client is None:
@@ -43,7 +43,7 @@ class Clickhouse(Database):
         table = model.tableize()
         rows, columns = self.client.execute(f"SELECT * FROM `{table}`", with_column_types=True)
         names = [column[0] for column in columns]
-        return [model.__class__(**dict(zip(names, row))) for row in rows]
+        return [model.__class__(**dict(zip(names, row, strict=True))) for row in rows]
 
     def get(self, model, wheres, limit=None, orders=None):
         if self.client is None:
@@ -82,7 +82,7 @@ class Clickhouse(Database):
             sql += f" LIMIT {int(limit)}"
         rows, columns = self.client.execute(sql, params, with_column_types=True)
         names = [column[0] for column in columns]
-        return [model.__class__(**dict(zip(names, row))) for row in rows]
+        return [model.__class__(**dict(zip(names, row, strict=True))) for row in rows]
 
     def delete(self, model):
         if self.client is None:
