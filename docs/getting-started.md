@@ -1,87 +1,18 @@
 # Getting started
-## Minimal app
-```python
-from future.application import Future
-from future.controllers import Controller
-from future.lifespan import Lifespan
-from future.response import Response
-from future.routing import Get, RouteGroup
+Scaffold with `future init`, then work in the layout below. Examples match how a real app (controllers, models, `run.py`) uses Future.
 
-class HomeController(Controller):
-    async def index(self) -> Response:
-        return self.response.json({"message": "hello"})
-
-ROUTES = [
-    RouteGroup(
-        name="Main",
-        routes=[Get("/", HomeController.index, "home")],
-    )
-]
-
-config = {
-    "APP_DOMAIN": "",      # empty = domainless mode (ignore Host / subdomains)
-    "APP_NAME": "MyApp",
-    "APP_DEBUG": True,     # uvicorn reload when run()
-    "OPENAPI": {
-        "enabled": True,
-        "uis": ["swagger", "redoc", "scalar", "rapidoc"],
-        "auto_routes": False,
-    },
-}
-
-app = Future(lifespan=Lifespan([], [], []), config=config)
-app.add_routes(ROUTES)
-
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
-```
-
-## Controllers
-Inherit `Controller`. Do **not** write your own `__init__` unless you need extra deps — the base class injects request/response:
-
-```python
-from future.controllers import Controller
-from future.response import Response
-
-class TradeController(Controller):
-    async def get_trades(self) -> Response:
-        return self.response.json([])
-
-    async def get_trade(self, id: str) -> Response:
-        # id comes from /trades/<id>
-        return self.response.json({"id": id})
-```
-
-Register with a **class method reference** (not an instance):
-
-```python
-Get("/trades", TradeController.get_trades, "trades")
-Get("/trades/<id>", TradeController.get_trade, "trade")
-```
-
-Future resolves the class, constructs `TradeController(request, response)`, and calls the action.
-
-## Config keys the core uses
-| Key | Role |
-|-----|------|
-| `APP_DOMAIN` | Host/subdomain routing; `""` = domainless |
-| `APP_NAME` | Banner / OpenAPI title fallback |
-| `APP_DEBUG` | Uvicorn reload; `future` logger DEBUG vs INFO; strip `:port` from `Host` |
-| `OPENAPI` | Docs enablement, UIs, license key, etc. |
-
-Pass `DATABASES` in `Future(config={...})` so connections register at boot (see [Database](database.md)). CLI `migrate` / `seed` load `run.py` for the same registration path.
-
-App code should log with `from future.logger import log` (level follows `APP_DEBUG`).
-
-## Project layout (`future init`)
+## Project layout
 ```text
 myproject/
-  run.py
+  run.py                 # Future(...), add_routes, app.run
+  .env                   # from .env.example (or use environment.yml — see Configuration)
   app/
-    config/          # Settings, Database
+    config/
+      Settings.py        # load env → APP_*, DB_*
+      Database.py        # DATABASES map
     controllers/
-    middleware/
     models/
+    middleware/
     plugins/
     tasks/
     routes.py
@@ -90,24 +21,71 @@ myproject/
     seeds/
 ```
 
-## OpenAPI docs in routes
+## Boot (`run.py`)
+```python
+from app.config.Settings import APP_HOST, APP_PORT, APP_WORKERS, APP_NAME, APP_DOMAIN, APP_DEBUG
+from app.config.Database import DATABASES
+from app.routes import routes
+from future.application import Future
+from future.lifespan import Lifespan
+
+config = {
+    "APP_DOMAIN": APP_DOMAIN,
+    "APP_NAME": APP_NAME,
+    "APP_DEBUG": APP_DEBUG,
+    "DATABASES": DATABASES,
+    "OPENAPI": {
+        "enabled": True,
+        "uis": ["swagger", "redoc", "scalar", "rapidoc"],
+        "auto_routes": False,
+    },
+}
+
+lifespan = Lifespan(startup_tasks=[], shutdown_tasks=[], cron_tasks=[])
+app = Future(lifespan=lifespan, config=config)
+app.add_routes(routes)
+
+if __name__ == "__main__":
+    app.run(host=APP_HOST, port=APP_PORT, workers=APP_WORKERS)
+```
+
+CLI `migrate` / `seed` / `routes` import this `app` so `DATABASES` registers the same way as at runtime.
+
+## Controllers
+See [Controllers](controllers.md). Short version: inherit `Controller`, use `self.request` / `self.response`, register class methods on routes.
+
+## Routes (`app/routes.py`)
 ```python
 from future.openapi import openapi_routes
-from future.routing import RouteGroup
+from future.routing import RouteGroup, Get
+from app.controllers.StockController import StockController
 
-ROUTES = [
+routes = [
     RouteGroup(
         name="Docs",
         routes=openapi_routes(uis=["swagger", "redoc", "scalar", "rapidoc"]),
     ),
-    # ...
+    RouteGroup(
+        prefix="/stocks",
+        name="Stocks",
+        routes=[
+            Get("/", StockController.get_stocks, "stocks"),
+            Get("/<str:stock_id>", StockController.get_stock, "stocks.show"),
+        ],
+    ),
 ]
 ```
 
-Then open `/docs`, `/redoc`, `/scalar`, or `/rapidoc`. Details: [OpenAPI](openapi.md).
+## First database cycle
+```bash
+cp .env.example .env          # DB_DATABASE=database → database.sqlite
+future make:model Stock
+# edit annotations on app/models/Stock.py — migrations/seeds are generated from these
+future make:migration Stock
+future make:seed Stock
+future migrate
+future seed
+future run
+```
 
-## Learn next
-- [HTTP: Request, Response, Middleware](http.md)
-- [Routing](routing.md)
-- [Database and models](database.md)
-- [Lifespan and tasks](lifespan-tasks.md)
+Details: [Models](models.md), [Configuration](configuration.md), [Database](database.md), [CLI](cli.md).
