@@ -14,6 +14,8 @@ MongoDB, ClickHouse, and Redis Active Record CRUD are usable (Redis has no schem
 ## Middleware stock library
 CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain unfinished and are **not** exported from `future.middleware`.
 
+- **Configured middleware on routes** — Today `middlewares=[CORSMiddleware]` is a class list; Future constructs each with `(request, response)`. Consider allowing per-route / per-group options without subclasses, e.g. `middlewares=[CORSMiddleware(opt=opt)]` (or an equivalent factory / options object), so apps can set CORS origins, rate limits, etc. in `routes.py`. Design carefully: keep no-decorator style, and do not break the current class + `(request, response)` injection.
+
 ## Authentication
 `future.authentication.*` are stubs (`auth_type` only). `BaseAuthentication` is an alias of `Authentication` so placeholder subclasses import. No JWT / OIDC / session-login middleware ships yet.
 

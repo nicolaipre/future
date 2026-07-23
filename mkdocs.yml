@@ -32,6 +32,7 @@ nav:
     - Configuration: configuration.md
     - Models: models.md
     - Database: database.md
+    - Docker: docker.md
     - OpenAPI: openapi.md
     - CLI: cli.md
   - Gaps: gaps.md

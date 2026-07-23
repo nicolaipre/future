@@ -47,3 +47,5 @@ future seed StockSeeder
 | Redis | N/A | Yes |
 
 Scaffold default is **SQLite**. Set `DB_DATABASE` / `sqlite_database` to a bare name; the driver appends `.sqlite`.
+
+For local MySQL, Postgres, Redis, MongoDB, Elasticsearch, ClickHouse, and RabbitMQ, see the [Docker example](docker.md).

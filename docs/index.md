@@ -71,6 +71,7 @@ Published at [nicolaipre.github.io/future](https://nicolaipre.github.io/future/)
 | [Configuration](configuration.md) | Settings, env, `DATABASES` |
 | [Models](models.md) | `future.models` — annotations; generate migrate/seed |
 | [Database](database.md) | Connections and drivers |
+| [Docker](docker.md) | Local DBs for testing |
 | [OpenAPI](openapi.md) | `future.openapi` |
 | [CLI](cli.md) | `future` console script |
 | [Gaps](gaps.md) | What’s unfinished |
