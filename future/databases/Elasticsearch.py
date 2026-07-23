@@ -46,6 +46,9 @@ class Elasticsearch(Database):
                 must.append({"bool": {"must_not": [{"match": {column: value}}]}})
             elif operator == "in":
                 must.append({"terms": {column: list(value)}})
+            elif operator == "like":
+                pattern = str(value).replace("%", "*").replace("_", "?")
+                must.append({"wildcard": {column: pattern}})
             else:
                 raise ValueError(f"Unsupported operator: {operator}")
         size = limit if limit is not None else 10000

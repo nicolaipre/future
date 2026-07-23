@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.1.0] - 2026-07-23
+### Added
+- `Query.limit(n)` — portable pagination for `where` / `order_by` chains across all Active Record drivers
+- Portable `where(column, "like", pattern)` with SQL-style `%` / `_` on SQLite, MySQL, Postgres, ClickHouse, Elasticsearch, MongoDB, and Redis
+- `GraphQLController.query` accepts `POST` `{query, variables?, operationName?}` and runs `config["GRAPHQL_SCHEMA"]` when set (demo schema fallback)
+
+### Changed
+- Dependency cleanup: drop unused packages; move pytest/coverage/ruff/mypy/build/twine to `dev`, MkDocs to `docs` group; bump runtime libs (uvicorn 0.51, rich 15, elasticsearch 9, strawberry 0.323, redis 8, faker 40, …)
+- Docs CI installs with `poetry install --with docs`
+- README GraphQL example uses `Post("/graphql", …)`
+
+### Notes
+- `like` naming is SQL-flavored; `docs/gaps.md` tracks a possible rename to a more generic operator later
+- Apps that called GraphQL via GET with the old fixed demo query must switch to POST bodies
+
+
 ## [1.0.2] - 2026-07-23
 ### Fixed
 - OpenAPI `servers` built at serve time from `request.scheme` + RouteGroup hosts (no hardcoded `https://APP_DOMAIN`); explicit `OPENAPI.servers` still wins

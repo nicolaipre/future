@@ -63,6 +63,11 @@ class Clickhouse(Database):
                     params[key] = item
                 clauses.append(f"`{column}` IN ({', '.join(keys)})")
                 continue
+            if operator == "like":
+                key = f"v{index}"
+                clauses.append(f"`{column}` LIKE %({key})s")
+                params[key] = value
+                continue
             if operator not in ("=", ">", ">=", "<", "<=", "!="):
                 raise ValueError(f"Unsupported operator: {operator}")
             key = f"v{index}"

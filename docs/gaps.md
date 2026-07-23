@@ -9,6 +9,8 @@ Honest inventory of what Future still lacks or only partially implements. Use th
 ## Database / ORM
 MongoDB, ClickHouse, and Redis Active Record CRUD are usable (Redis has no schema/migrate). Remaining ORM gaps are driver-specific edge cases rather than stubs.
 
+- **`where(..., "like", ...)` naming** — Pattern matching works on all drivers (`%` / `_`, mapped per backend), but the operator name is SQL-flavored. Later: review a more generic, cross-store name (e.g. `match` / `pattern` / `contains`-style) that stays understandable for SQL, Elasticsearch, MongoDB, etc., without breaking the agnostic Model API. Keep one portable pattern language; avoid driver-specific wording in app code.
+
 ## Middleware stock library
 CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain unfinished and are **not** exported from `future.middleware`.
 
@@ -26,7 +28,7 @@ CORS, GZip, CSRF, and RateLimit are usable and exported. Confuser classes remain
 - **`Future.run` stays on uvicorn.** Hypercorn is **not** a drop-in for `uvicorn.run(...)` (different API: `Config` + `asyncio.run(serve(app, config))`, different workers/reload). An optional Hypercorn backend can be a later feature, not a silent swap.
 
 ## GraphQL
-In-repo schema is a demo. `GraphQLController` runs a fixed query — not a general GraphQL HTTP endpoint. Docs must not claim `app.add_graphql_route`.
+`GraphQLController.query` accepts `POST` with `{query, variables?, operationName?}`. Schema from `config["GRAPHQL_SCHEMA"]`, else the in-repo demo schema. Docs must not claim `app.add_graphql_route`.
 
 ## Plugins
 `Plugin` is a marker. Only `ElasticsearchPlugin` is substantial. No lifecycle hooks into `Future` boot.
